@@ -1,0 +1,51 @@
+// Define os caminhos para os avatares que você colocou na pasta /public
+// O Next.js serve a pasta /public como a raiz (/).
+// Adicione ou remova os nomes dos seus arquivos aqui.
+
+export const AVATAR_LIST = {
+  masculino: [
+    "/avatars/masculino/avatar_mas (1).png",
+    "/avatars/masculino/avatar_mas (2).png",
+    "/avatars/masculino/avatar_mas (3).png",
+    "/avatars/masculino/avatar_mas (4).png",
+    "/avatars/masculino/avatar_mas (5).png",
+    "/avatars/masculino/avatar_mas (6).png",
+    "/avatars/masculino/avatar_mas (7).png",
+    "/avatars/masculino/avatar_mas (8).png",
+    "/avatars/masculino/avatar_mas (9).png",
+    "/avatars/masculino/avatar_mas (10).png",
+    "/avatars/masculino/avatar_mas (11).png",
+    "/avatars/masculino/avatar_mas (12).png",
+    "/avatars/masculino/avatar_mas (13).png",
+    "/avatars/masculino/avatar_mas (14).png",
+    "/avatars/masculino/avatar_mas (15).png",
+  ],
+  feminino: [
+    "/avatars/feminino/avatar_fem (1).png",
+    "/avatars/feminino/avatar_fem (2).png",
+    "/avatars/feminino/avatar_fem (3).png",
+    "/avatars/feminino/avatar_fem (4).png",
+    "/avatars/feminino/avatar_fem (5).png",
+    "/avatars/feminino/avatar_fem (6).png",
+    "/avatars/feminino/avatar_fem (7).png",
+    "/avatars/feminino/avatar_fem (8).png",
+    "/avatars/feminino/avatar_fem (9).png",
+    "/avatars/feminino/avatar_fem (10).png",
+    "/avatars/feminino/avatar_fem (11).png",
+    "/avatars/feminino/avatar_fem (12).png",
+    "/avatars/feminino/avatar_fem (13).png",
+  ],
+  outros: [
+    "/avatars/outros/avatar_outros (1).png",
+    "/avatars/outros/avatar_outros (2).png",
+    "/avatars/outros/avatar_outros (3).png",
+    "/avatars/outros/avatar_outros (4).png",
+    "/avatars/outros/avatar_outros (5).png",
+    "/avatars/outros/avatar_outros (6).png",
+    "/avatars/outros/avatar_outros (7).png",
+    "/avatars/outros/avatar_outros (8).png",
+    "/avatars/outros/avatar_outros (9).png",
+    "/avatars/outros/avatar_outros (10).png",
+    "/avatars/outros/avatar_outros (11).png",
+  ],
+};

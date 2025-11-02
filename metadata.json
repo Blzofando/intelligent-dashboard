@@ -1,0 +1,5 @@
+{
+  "name": "Intelligent Learning Dashboard",
+  "description": "An intelligent personal learning dashboard that helps users track their progress through a course, plan their studies, and reinforce learning with AI-powered summaries, quizzes, and chat.",
+  "requestFramePermissions": []
+}

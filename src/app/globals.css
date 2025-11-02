@@ -1,0 +1,140 @@
+/* 1. Importa todas as funcionalidades do Tailwind v4 */
+@import "tailwindcss";
+
+/* 2. Nossas regras personalizadas (sem @apply, usando CSS puro) */
+
+/* Estilos customizados para formulários */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+  background-color: white;
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  color: #111827; /* text-gray-900 */
+  
+  /* Seletor :where para modo escuro */
+  &:where(.dark, .dark *) {
+    background-color: #374151; /* dark:bg-gray-700 */
+    border-color: #4b5563; /* dark:border-gray-600 */
+    color: white;
+  }
+}
+
+/* Estilos de Foco */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #3b82f6; /* ring-primary-500 */
+  outline-offset: 2px;
+  border-color: #3b82f6; /* border-primary-500 */
+  
+  &:where(.dark, .dark *) {
+    outline-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+}
+
+/* Estilos de Botão Desabilitado */
+button:disabled {
+  background-color: #d1d5db; /* bg-gray-300 */
+  color: #6b7280; /* text-gray-500 */
+  cursor: not-allowed;
+  
+  &:where(.dark, .dark *) {
+    background-color: #4b5563; /* dark:bg-gray-600 */
+    color: #9ca3af; /* dark:text-gray-400 */
+  }
+}
+
+/* --- Estilos para o React-Calendar (Convertidos para CSS Puro) --- */
+.react-calendar-custom {
+  border: none;
+  border-radius: 0.5rem;
+  width: 100%;
+}
+.react-calendar-custom .react-calendar__navigation {
+  margin-bottom: 1rem;
+}
+.react-calendar-custom .react-calendar__navigation button {
+  color: #2563eb; /* text-primary-600 */
+  font-weight: 700;
+  font-size: 1.125rem;
+  border-radius: 0.5rem;
+}
+.react-calendar-custom .react-calendar__navigation button:hover {
+  background-color: #f3f4f6; /* hover:bg-gray-100 */
+}
+.react-calendar-custom .react-calendar__navigation button:where(.dark, .dark *) {
+  color: #60a5fa; /* dark:text-primary-400 */
+}
+.react-calendar-custom .react-calendar__navigation button:where(.dark, .dark *):hover {
+  background-color: #374151; /* dark:hover:bg-gray-700 */
+}
+
+.react-calendar-custom .react-calendar__month-view__weekdays__weekday {
+  color: #374151; /* text-gray-700 */
+  font-weight: 600;
+}
+.react-calendar-custom .react-calendar__month-view__weekdays__weekday:where(.dark, .dark *) {
+  color: #d1d5db; /* dark:text-gray-300 */
+}
+
+.react-calendar-custom .react-calendar__tile {
+  height: 4rem;
+  border-radius: 0.5rem;
+  color: #1f2937; /* text-gray-800 */
+}
+.react-calendar-custom .react-calendar__tile:hover {
+  background-color: #f3f4f6; /* hover:bg-gray-100 */
+}
+.react-calendar-custom .react-calendar__tile:where(.dark, .dark *) {
+  color: #f9fafb; /* dark:text-gray-100 */
+}
+.react-calendar-custom .react-calendar__tile:where(.dark, .dark *):hover {
+  background-color: #374151; /* dark:hover:bg-gray-700 */
+}
+
+/* Dia selecionado (Hoje) */
+.react-calendar-custom .react-calendar__tile--now {
+  background-color: #dbeafe; /* bg-primary-100 */
+  color: #1d4ed8; /* text-primary-700 */
+  font-weight: 700;
+}
+.react-calendar-custom .react-calendar__tile--now:hover {
+  background-color: #bfdbfe; /* hover:bg-primary-200 */
+}
+.react-calendar-custom .react-calendar__tile--now:where(.dark, .dark *) {
+  background-color: rgba(30, 58, 138, 0.5); /* dark:bg-primary-900/50 */
+  color: #93c5fd; /* dark:text-primary-300 */
+}
+.react-calendar-custom .react-calendar__tile--now:where(.dark, .dark *):hover {
+  background-color: #1e3a8a; /* dark:hover:bg-primary-900 */
+}
+
+/* Dia Ativo (Clicado) */
+.react-calendar-custom .react-calendar__tile--active {
+  background-color: #2563eb; /* bg-primary-600 */
+  color: white;
+}
+.react-calendar-custom .react-calendar__tile--active:hover {
+  background-color: #1d4ed8; /* hover:bg-primary-700 */
+}
+
+/* Dia com aulas (do nosso tileClassName) */
+.react-calendar-custom .has-lessons {
+  position: relative;
+}
+.react-calendar-custom .has-lessons::after {
+  content: '';
+  width: 0.375rem; /* w-1.5 */
+  height: 0.375rem; /* h-1.5 */
+  background-color: #22c55e; /* bg-secondary-500 */
+  border-radius: 9999px; /* rounded-full */
+  position: absolute;
+  bottom: 0.75rem; /* bottom-3 */
+  left: 50%;
+  transform: translateX(-50%);
+}
