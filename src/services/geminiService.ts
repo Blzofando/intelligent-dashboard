@@ -1,14 +1,16 @@
-// src/services/geminiService.ts
-
 import { QuizQuestion, Flashcard, StudyPlan } from "@/types";
 
-// --- 1. CORREÇÃO AQUI ---
-// Corrigimos a função "falsa" para usar "Generics" (<T>)
-// Isso diz ao TypeScript qual o tipo de retorno que esperamos.
+// Função para formatar data como "YYYY-MM-DD"
+function formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+}
+
+// Versão "Falsa" (dummy) que retorna os tipos corretos
 const dummyPromise = <T,>(data: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(data), 500));
 
-// Agora usamos <T> para dizer ao TypeScript qual o tipo de retorno
+
+// --- API do Resumo ---
 export const generateSummary = async (moduleTitle: string, lessonTitles: string[]): Promise<string> => {
   try {
     const response = await fetch('/api/gemini/summary', {
@@ -32,6 +34,7 @@ export const generateSummary = async (moduleTitle: string, lessonTitles: string[
   }
 };
 
+// --- API do Quiz ---
 export const generateQuiz = async (moduleTitle: string, lessonTitles: string[]): Promise<QuizQuestion[]> => {
   try {
     const response = await fetch('/api/gemini/quiz', {
@@ -46,7 +49,6 @@ export const generateQuiz = async (moduleTitle: string, lessonTitles: string[]):
       throw new Error('Erro na resposta da API de quiz');
     }
 
-    // A resposta da API já é o array de perguntas
     const data: QuizQuestion[] = await response.json();
     return data;
 
@@ -56,6 +58,7 @@ export const generateQuiz = async (moduleTitle: string, lessonTitles: string[]):
   }
 };
 
+// --- API dos Flashcards ---
 export const generateFlashcards = async (moduleTitle: string, lessonTitles: string[]): Promise<Flashcard[]> => {
   try {
     const response = await fetch('/api/gemini/flashcards', {
@@ -70,7 +73,6 @@ export const generateFlashcards = async (moduleTitle: string, lessonTitles: stri
       throw new Error('Erro na resposta da API de flashcards');
     }
 
-    // A resposta da API já é o array de flashcards
     const data: Flashcard[] = await response.json();
     return data;
 
@@ -80,32 +82,34 @@ export const generateFlashcards = async (moduleTitle: string, lessonTitles: stri
   }
 };
 
-export const generateStudyPlan = async (courseContent: { title: string; lessons: number }[], goalDays: number, hoursPerDay: number): Promise<StudyPlan> => {
+// --- API do Plano de Estudos (Gemini) ---
+export const generateStudyPlan = async (settings: any, completedLessons: string[]): Promise<StudyPlan> => {
   try {
-    const response = await fetch('/api/gemini/study-plan', {
+    const response = await fetch('/api/gemini/generate-plan', { 
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ courseContent, goalDays, hoursPerDay }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        settings,
+        completedLessons, 
+      }),
     });
 
     if (!response.ok) {
-      throw new Error('Erro na resposta da API de plano de estudos');
+      throw new Error("Falha ao gerar o plano (Gemini).");
     }
 
-    // A resposta da API já é o objeto { plan: [...] }
-    const data: StudyPlan = await response.json();
-    return data;
-
+    const plan: StudyPlan = await response.json();
+    return plan;
+    
   } catch (error) {
     console.error("Erro ao chamar a API de plano de estudos:", error);
-    return { plan: [] }; // Retorna um plano vazio em caso de erro
+    // --- A CORREÇÃO ESTÁ AQUI ---
+    // Retorna um objeto StudyPlan completo (com 'plan' e 'expectedCompletionDate')
+    return { plan: [], expectedCompletionDate: formatDate(new Date()) }; 
   }
 };
 
-// --- 2. CORREÇÃO AQUI ---
-// Corrigimos a função de chat para tipar a resposta do JSON
+// --- API do Chat ---
 export const answerCourseQuestion = async (question: string, context: string): Promise<string> => {
   try {
     const response = await fetch('/api/gemini/chat', {
@@ -119,8 +123,7 @@ export const answerCourseQuestion = async (question: string, context: string): P
     if (!response.ok) {
       throw new Error('Erro na resposta da API');
     }
-
-    // Dizemos ao TypeScript que esperamos um objeto com a chave 'answer'
+    
     const data: { answer: string } = await response.json(); 
     
     return data.answer || "Não obtive uma resposta.";
@@ -131,6 +134,7 @@ export const answerCourseQuestion = async (question: string, context: string): P
   }
 };
 
+// --- API das Recomendações ---
 export const getRecommendations = async (completedModules: string[]): Promise<string> => {
   try {
     const response = await fetch('/api/gemini/recommendations', {
@@ -145,7 +149,6 @@ export const getRecommendations = async (completedModules: string[]): Promise<st
       throw new Error('Erro na resposta da API de recomendações');
     }
 
-    // A resposta da API é um objeto { recommendations: "texto..." }
     const data: { recommendations: string } = await response.json();
     return data.recommendations || "Não foi possível gerar recomendações.";
 
@@ -154,3 +157,4 @@ export const getRecommendations = async (completedModules: string[]): Promise<st
     return "Desculpe, não consegui gerar as recomendações. Tente novamente.";
   }
 };
+
