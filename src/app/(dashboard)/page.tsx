@@ -113,9 +113,9 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
       {/* --- SAUDAÇÃO E BOTÃO CONTINUAR --- */}
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-sm shadow-xs">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
           Olá, {profile?.displayName}!
         </h1>
@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
             </p>
             <Link 
               href={`/lesson/${nextLesson.id}`} 
-              className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg shadow-md hover:bg-primary-700 transition-all"
+              className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-sm shadow-xs hover:bg-primary-700 transition-all"
             >
               <i className="fas fa-play"></i>
               Continuar Aula: <span className="font-semibold">{nextLesson.title.substring(0, 30)}...</span>
@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
       {/* --- PAINEL DE ESTATÍSTICAS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Gráfico de Pizza (Progresso) */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-sm shadow-xs flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Progresso Geral</h2>
           <div className="w-48 h-48">
             <ResponsiveContainer>

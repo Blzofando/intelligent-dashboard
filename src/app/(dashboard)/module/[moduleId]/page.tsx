@@ -103,7 +103,7 @@ const ModuleDetail: React.FC = () => {
               value={notes[module.id] || ''}
               onChange={e => updateNote(module.id, e.target.value)}
               placeholder="Escreva suas anotações aqui..."
-              className="w-full h-32 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full h-32 p-2 border rounded-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-hidden focus:ring-3 focus:ring-primary-500"
           />
       </div>
 

@@ -157,7 +157,7 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
       <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Meu Perfil</h1>
       
       {/* --- ESTATÍSTICAS --- */}
@@ -184,7 +184,7 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* --- ATUALIZAR PERFIL (Firestore) --- */}
-      <form onSubmit={handleProfileUpdate} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-6">
+      <form onSubmit={handleProfileUpdate} className="bg-white dark:bg-gray-800 p-6 rounded-sm shadow-xs flex flex-col gap-6">
         <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Informações Públicas</h2>
         
         {/* Seletor de Avatar */}

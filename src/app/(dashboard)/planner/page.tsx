@@ -168,6 +168,7 @@ const PlannerPage: React.FC = () => {
             selectRange={false}
             locale="pt-BR"
           />
+          
         </div>
 
         {/* 3. ESTATÍSTICAS (Direita) */}

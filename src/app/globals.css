@@ -1,140 +1,133 @@
-/* 1. Importa todas as funcionalidades do Tailwind v4 */
 @import "tailwindcss";
 
-/* 2. Nossas regras personalizadas (sem @apply, usando CSS puro) */
-
-/* Estilos customizados para formulários */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="date"],
-input[type="number"],
-select,
-textarea {
-  background-color: white;
-  border: 1px solid #d1d5db; /* border-gray-300 */
-  color: #111827; /* text-gray-900 */
-  
-  /* Seletor :where para modo escuro */
-  &:where(.dark, .dark *) {
-    background-color: #374151; /* dark:bg-gray-700 */
-    border-color: #4b5563; /* dark:border-gray-600 */
-    color: white;
-  }
-}
-
-/* Estilos de Foco */
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 2px solid #3b82f6; /* ring-primary-500 */
-  outline-offset: 2px;
-  border-color: #3b82f6; /* border-primary-500 */
-  
-  &:where(.dark, .dark *) {
-    outline-color: #3b82f6;
-    border-color: #3b82f6;
-  }
-}
-
-/* Estilos de Botão Desabilitado */
-button:disabled {
-  background-color: #d1d5db; /* bg-gray-300 */
-  color: #6b7280; /* text-gray-500 */
-  cursor: not-allowed;
-  
-  &:where(.dark, .dark *) {
-    background-color: #4b5563; /* dark:bg-gray-600 */
-    color: #9ca3af; /* dark:text-gray-400 */
-  }
-}
-
-/* --- Estilos para o React-Calendar (Convertidos para CSS Puro) --- */
-.react-calendar-custom {
-  border: none;
-  border-radius: 0.5rem;
+/* Estilos do Calendário */
+.react-calendar {
   width: 100%;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  padding: 1rem;
+  border: none;
 }
-.react-calendar-custom .react-calendar__navigation {
+
+.dark .react-calendar {
+  background-color: rgb(31 41 55);
+}
+
+.react-calendar__navigation {
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.react-calendar-custom .react-calendar__navigation button {
-  color: #2563eb; /* text-primary-600 */
-  font-weight: 700;
+
+.react-calendar__navigation button {
+  min-width: 2.75rem;
+  background: transparent;
+  color: rgb(55 65 81);
+  padding: 0.5rem;
   font-size: 1.125rem;
-  border-radius: 0.5rem;
-}
-.react-calendar-custom .react-calendar__navigation button:hover {
-  background-color: #f3f4f6; /* hover:bg-gray-100 */
-}
-.react-calendar-custom .react-calendar__navigation button:where(.dark, .dark *) {
-  color: #60a5fa; /* dark:text-primary-400 */
-}
-.react-calendar-custom .react-calendar__navigation button:where(.dark, .dark *):hover {
-  background-color: #374151; /* dark:hover:bg-gray-700 */
-}
-
-.react-calendar-custom .react-calendar__month-view__weekdays__weekday {
-  color: #374151; /* text-gray-700 */
   font-weight: 600;
-}
-.react-calendar-custom .react-calendar__month-view__weekdays__weekday:where(.dark, .dark *) {
-  color: #d1d5db; /* dark:text-gray-300 */
-}
-
-.react-calendar-custom .react-calendar__tile {
-  height: 4rem;
   border-radius: 0.5rem;
-  color: #1f2937; /* text-gray-800 */
-}
-.react-calendar-custom .react-calendar__tile:hover {
-  background-color: #f3f4f6; /* hover:bg-gray-100 */
-}
-.react-calendar-custom .react-calendar__tile:where(.dark, .dark *) {
-  color: #f9fafb; /* dark:text-gray-100 */
-}
-.react-calendar-custom .react-calendar__tile:where(.dark, .dark *):hover {
-  background-color: #374151; /* dark:hover:bg-gray-700 */
+  transition: background-color 0.2s;
 }
 
-/* Dia selecionado (Hoje) */
-.react-calendar-custom .react-calendar__tile--now {
-  background-color: #dbeafe; /* bg-primary-100 */
-  color: #1d4ed8; /* text-primary-700 */
-  font-weight: 700;
-}
-.react-calendar-custom .react-calendar__tile--now:hover {
-  background-color: #bfdbfe; /* hover:bg-primary-200 */
-}
-.react-calendar-custom .react-calendar__tile--now:where(.dark, .dark *) {
-  background-color: rgba(30, 58, 138, 0.5); /* dark:bg-primary-900/50 */
-  color: #93c5fd; /* dark:text-primary-300 */
-}
-.react-calendar-custom .react-calendar__tile--now:where(.dark, .dark *):hover {
-  background-color: #1e3a8a; /* dark:hover:bg-primary-900 */
+.dark .react-calendar__navigation button {
+  color: rgb(229 231 235);
 }
 
-/* Dia Ativo (Clicado) */
-.react-calendar-custom .react-calendar__tile--active {
-  background-color: #2563eb; /* bg-primary-600 */
+.react-calendar__navigation button:hover:enabled {
+  background-color: rgb(243 244 246);
+}
+
+.dark .react-calendar__navigation button:hover:enabled {
+  background-color: rgb(55 65 81);
+}
+
+.react-calendar__navigation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.react-calendar__month-view__weekdays {
+  color: rgb(107 114 128);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.dark .react-calendar__month-view__weekdays {
+  color: rgb(156 163 175);
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.react-calendar__month-view__days__day {
+  aspect-ratio: 1;
+  padding: 0.5rem;
+  text-align: center;
+  border-radius: 0.5rem;
+  position: relative;
+  color: rgb(55 65 81);
+}
+
+.dark .react-calendar__month-view__days__day {
+  color: rgb(229 231 235);
+}
+
+.react-calendar__month-view__days__day:hover:enabled {
+  background-color: rgb(243 244 246);
+}
+
+.dark .react-calendar__month-view__days__day:hover:enabled {
+  background-color: rgb(55 65 81);
+}
+
+.react-calendar__tile--now {
+  background-color: rgb(219 234 254);
+  color: rgb(29 78 216);
+}
+
+.dark .react-calendar__tile--now {
+  background-color: rgba(30 58 138 / 0.3);
+  color: rgb(96 165 250);
+}
+
+.react-calendar__tile--active,
+.react-calendar__tile--active:enabled:hover {
+  background-color: rgb(37 99 235);
   color: white;
 }
-.react-calendar-custom .react-calendar__tile--active:hover {
-  background-color: #1d4ed8; /* hover:bg-primary-700 */
-}
 
-/* Dia com aulas (do nosso tileClassName) */
-.react-calendar-custom .has-lessons {
-  position: relative;
-}
-.react-calendar-custom .has-lessons::after {
+/* Dias com aulas */
+.react-calendar__tile--hasEvent::after {
   content: '';
-  width: 0.375rem; /* w-1.5 */
-  height: 0.375rem; /* h-1.5 */
-  background-color: #22c55e; /* bg-secondary-500 */
-  border-radius: 9999px; /* rounded-full */
   position: absolute;
-  bottom: 0.75rem; /* bottom-3 */
+  bottom: 0.25rem;
   left: 50%;
   transform: translateX(-50%);
+  width: 0.375rem;
+  height: 0.375rem;
+  background-color: rgb(34 197 94);
+  border-radius: 9999px;
+}
+
+/* Dias do fim de semana */
+.react-calendar__month-view__days__day--weekend {
+  color: rgb(239 68 68);
+}
+
+.dark .react-calendar__month-view__days__day--weekend {
+  color: rgb(248 113 113);
+}
+
+/* Dias de outros meses */
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: rgb(156 163 175);
+}
+
+.dark .react-calendar__month-view__days__day--neighboringMonth {
+  color: rgb(75 85 99);
 }

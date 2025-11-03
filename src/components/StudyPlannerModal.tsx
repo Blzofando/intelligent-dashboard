@@ -118,7 +118,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
@@ -127,10 +127,10 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
         </div>
 
         {/* Conteúdo do Modal */}
-        <div className="p-6 space-y-6 overflow-y-auto">
+        <div className="p-6 flex flex-col gap-6 overflow-y-auto">
           {/* ETAPA 1: MODO */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <h3 className="text-lg font-semibold">1. Qual é o seu ritmo de estudo?</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <ModeCard icon={Feather} title="Suave" description="Aprox. 30 min / dia" onClick={() => handleModeSelect('suave', 30)} isSelected={mode === 'suave'} />
@@ -142,7 +142,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
 
           {/* ETAPA 2: DIAS E DATA DE INÍCIO */}
           {step === 2 && (
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
               <div>
                 <h3 className="text-lg font-semibold">2. Quais dias você quer estudar?</h3>
                 <div className="flex flex-wrap gap-2 mt-4">
@@ -179,7 +179,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
 
           {/* ETAPA 3: FOCO */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <h3 className="text-lg font-semibold">4. (Opcional) Deseja focar em alguma área?</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Ex: "Power BI focado na área de licitação"

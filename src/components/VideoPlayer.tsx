@@ -137,7 +137,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ lessonId, lessonTitle, onComp
 
       {/* Overlay de Loading */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/75 pointer-events-none">
           <div className="text-center text-white">
             <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
             <p>Carregando aula...</p>
@@ -147,7 +147,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ lessonId, lessonTitle, onComp
 
       {/* Overlay de Erro */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-90">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/90">
           <div className="text-center text-white p-6">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h3 className="text-xl font-bold mb-2">Ops! Algo deu errado</h3>

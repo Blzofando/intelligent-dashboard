@@ -56,7 +56,7 @@ const ChatWidget: React.FC = () => {
             </div>
 
             {isOpen && (
-                <div className="fixed bottom-28 right-8 w-full max-w-md h-[60vh] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 transition-all duration-300">
+                <div className="fixed bottom-28 right-8 w-full max-w-md h-[60vh] bg-white dark:bg-gray-800 rounded-sm shadow-xl flex flex-col z-50 transition-all duration-300">
                     <header className="p-4 bg-primary-600 text-white flex justify-between items-center rounded-t-lg">
                         <h3 className="font-bold text-lg">Assistente IA do Curso</h3>
                         <button onClick={() => setIsOpen(false)}>&times;</button>
@@ -84,7 +84,7 @@ const ChatWidget: React.FC = () => {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 placeholder="Pergunte sobre o curso..."
-                                className="flex-1 p-2 border rounded-l-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="flex-1 p-2 border rounded-l-sm dark:bg-gray-700 dark:border-gray-600 focus:outline-hidden focus:ring-3 focus:ring-primary-500"
                                 disabled={isLoading}
                             />
                             <button type="submit" className="bg-primary-600 text-white p-2 rounded-r-lg" disabled={isLoading}>
