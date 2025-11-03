@@ -57,18 +57,20 @@ export default function DashboardLayout({
                     href={item.path}
                     onClick={() => setIsSidebarOpen(false)}
                     // --- ATUALIZAÇÃO DE ESTILO ---
-                    className={`relative flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
+                    className={`group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-primary-600 text-white shadow-lg' // Destaque forte
+                        ? 'bg-blue-600 text-white shadow-md' // Item ativo
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {/* Barra lateral de destaque */}
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-white rounded-r-full"></span>
-                    )}
-                    <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="ml-4">{item.label}</span>
+                    <div className={`flex items-center justify-center ${
+                      isActive 
+                        ? 'bg-blue-700' 
+                        : 'group-hover:bg-gray-200 dark:group-hover:bg-gray-600'
+                    } p-1.5 rounded-md transition-colors duration-200`}>
+                      <Icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+                    </div>
+                    <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>{item.label}</span>
                   </Link>
                 );
               })}

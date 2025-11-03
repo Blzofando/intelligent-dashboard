@@ -115,7 +115,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-col gap-8">
       {/* --- SAUDAÇÃO E BOTÃO CONTINUAR --- */}
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-sm shadow-xs">
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
           Olá, {profile?.displayName}!
         </h1>
@@ -126,10 +126,15 @@ const Dashboard: React.FC = () => {
             </p>
             <Link 
               href={`/lesson/${nextLesson.id}`} 
-              className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-sm shadow-xs hover:bg-primary-700 transition-all"
+              className="group mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-px transform transition-all duration-200 relative z-20"
             >
-              <i className="fas fa-play"></i>
-              Continuar Aula: <span className="font-semibold">{nextLesson.title.substring(0, 30)}...</span>
+              <div className="bg-blue-700 p-1.5 rounded-md">
+                <i className="fas fa-play text-sm"></i>
+              </div>
+              <span className="text-sm">
+                Continuar Aula: 
+                <span className="ml-1 font-medium">{nextLesson.title.substring(0, 30)}...</span>
+              </span>
             </Link>
           </>
         ) : (
