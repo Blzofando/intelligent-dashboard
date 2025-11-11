@@ -27,7 +27,6 @@ function formatDuration(totalSeconds: number): string {
 const ProfilePage: React.FC = () => {
   const { user } = useAuthStore();
   const { profile, updateProfile } = useProfileStore();
-  // Pega o 'resetProgress' do contexto do curso
   const { completedLessons, resetProgress } = useCourseContext();
 
   // Estados dos formulários
@@ -35,16 +34,15 @@ const ProfilePage: React.FC = () => {
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<UserProfile['gender']>('prefiro-nao-dizer');
   const [avatarPath, setAvatarPath] = useState('');
+  const [focusArea, setFocusArea] = useState(''); // <-- ADICIONADO
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  // --- NOVOS ESTADOS DE UI ---
-  const [isProfileDirty, setIsProfileDirty] = useState(false); // "Precisa salvar"
+  const [isProfileDirty, setIsProfileDirty] = useState(false); 
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  // --- FIM DOS NOVOS ESTADOS ---
 
   useEffect(() => {
     if (profile) {
@@ -52,7 +50,8 @@ const ProfilePage: React.FC = () => {
       setBirthDate(profile.birthDate || '');
       setGender(profile.gender || 'prefiro-nao-dizer');
       setAvatarPath(profile.avatarPath);
-      setIsProfileDirty(false); // Reseta o estado "dirty" ao carregar
+      setFocusArea(profile.focusArea || ''); // <-- ADICIONADO
+      setIsProfileDirty(false); 
     }
   }, [profile]);
 
@@ -81,9 +80,6 @@ const ProfilePage: React.FC = () => {
     return [...outros, ...masculino, ...feminino];
   }, [gender]);
 
-  // --- FUNÇÕES DE UPDATE ATUALIZADAS ---
-  
-  // Função genérica para marcar o formulário como "sujo" (precisa salvar)
   const handleProfileChange = (setter: React.Dispatch<React.SetStateAction<any>>, value: any) => {
     setter(value);
     setIsProfileDirty(true);
@@ -101,24 +97,25 @@ const ProfilePage: React.FC = () => {
       birthDate,
       gender,
       avatarPath,
+      focusArea: focusArea || "Sem foco definido", // <-- ADICIONADO
     };
     
     await updateProfile(user.uid, newProfileData);
     
     setIsProfileSaving(false);
-    setIsProfileDirty(false); // Foi salvo
+    setIsProfileDirty(false); 
     setMessage({ type: 'success', text: 'Perfil salvo com sucesso!' });
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
+    // ... (função sem alteração)
     e.preventDefault();
     if (!user || !user.email) {
       setMessage({ type: 'error', text: 'Usuário não encontrado.' });
       return;
     }
-    // ... (validações de senha) ...
-
+    
     setIsPasswordSaving(true);
     setMessage({ type: '', text: '' });
 
@@ -139,8 +136,8 @@ const ProfilePage: React.FC = () => {
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
   };
 
-  // --- NOVA FUNÇÃO: RESETAR PROGRESSO ---
   const handleResetProgress = () => {
+    // ... (função sem alteração)
     if (window.confirm("Você tem certeza? Todo o seu progresso de aulas e anotações será apagado permanentemente.")) {
       resetProgress();
       setMessage({ type: 'success', text: 'Seu progresso foi resetado.' });
@@ -163,7 +160,7 @@ const ProfilePage: React.FC = () => {
       {/* --- ESTATÍSTICAS --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* ... (código das estatísticas, sem mudança) ... */}
-         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Progresso do Curso</h2>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
             <div 
@@ -184,7 +181,7 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* --- ATUALIZAR PERFIL (Firestore) --- */}
-      <form onSubmit={handleProfileUpdate} className="bg-white dark:bg-gray-800 p-6 rounded-sm shadow-xs flex flex-col gap-6">
+      <form onSubmit={handleProfileUpdate} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col gap-6">
         <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Informações Públicas</h2>
         
         {/* Seletor de Avatar */}
@@ -195,7 +192,6 @@ const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 key={path}
-                // Chama a função 'handleProfileChange'
                 onClick={() => handleProfileChange(setAvatarPath, path)}
                 className={`rounded-full transition-all duration-200 ${avatarPath === path ? 'ring-4 ring-primary-500' : 'hover:scale-110'}`}
               >
@@ -220,7 +216,7 @@ const ProfilePage: React.FC = () => {
               id="displayName"
               value={displayName}
               onChange={(e) => handleProfileChange(setDisplayName, e.target.value)}
-              className="mt-1 block w-full rounded-md shadow-sm"
+              className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
             />
           </div>
           <div>
@@ -230,7 +226,7 @@ const ProfilePage: React.FC = () => {
               id="birthDate"
               value={birthDate}
               onChange={(e) => handleProfileChange(setBirthDate, e.target.value)}
-              className="mt-1 block w-full rounded-md shadow-sm"
+              className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
             />
           </div>
           <div>
@@ -239,7 +235,7 @@ const ProfilePage: React.FC = () => {
               id="gender"
               value={gender}
               onChange={(e) => handleProfileChange(setGender, e.target.value as UserProfile['gender'])}
-              className="mt-1 block w-full rounded-md shadow-sm"
+              className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
             >
               <option value="prefiro-nao-dizer">Prefiro não dizer</option>
               <option value="masculino">Masculino</option>
@@ -247,11 +243,24 @@ const ProfilePage: React.FC = () => {
               <option value="outros">Outros</option>
             </select>
           </div>
+
+          {/* --- CAMPO DE FOCO ADICIONADO --- */}
+          <div>
+            <label htmlFor="focusArea" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Foco de Carreira</label> 
+             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ex: "Vendas", "RH", "Produção"</p>
+            <input
+              type="text"
+              id="focusArea"
+              value={focusArea}
+              onChange={(e) => handleProfileChange(setFocusArea, e.target.value)}
+              placeholder="Qual sua área de foco?"
+              className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
+            />
+          </div>
         </div>
         
         <button
           type="submit"
-          // Botão desabilitado se não houver mudanças OU se estiver salvando
           disabled={!isProfileDirty || isProfileSaving}
           className={`px-6 py-2 text-white rounded-lg transition-colors ${
             isProfileDirty ? 'bg-primary-600 hover:bg-primary-700' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
@@ -268,27 +277,55 @@ const ProfilePage: React.FC = () => {
       {/* --- ATUALIZAR SENHA (Auth) --- */}
       <form onSubmit={handlePasswordChange} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
         {/* ... (código do formulário de senha, sem mudança) ... */}
+         <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Alterar Senha</h2>
+        <div>
+          <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Senha Atual</label>
+          <input
+            type="password"
+            id="currentPassword"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nova Senha</label>
+          <input
+            type="password"
+            id="newPassword"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="mt-1 block w-full rounded-md shadow-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-primary-500 focus:ring-primary-500"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isPasswordSaving || !currentPassword || !newPassword}
+          className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400"
+        >
+          {isPasswordSaving ? 'Salvando...' : 'Alterar Senha'}
+        </button>
       </form>
 
       {/* --- ZONA DE PERIGO (NOVO) --- */}
       <div className="bg-red-50 dark:bg-red-900/30 border border-red-500 p-6 rounded-lg shadow-md space-y-4">
-         <h2 className="text-xl font-semibold text-red-700 dark:text-red-300">Zona de Perigo</h2>
-         <p className="text-sm text-red-600 dark:text-red-200">
-           Cuidado, esta ação é irreversível. Isso apagará todo o seu progresso de aulas e anotações.
-         </p>
-         <button
-          onClick={handleResetProgress}
-          className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-        >
-          <i className="fas fa-trash mr-2"></i>
-          Resetar Progresso do Curso
-        </button>
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-300">Zona de Perigo</h2>
+          <p className="text-sm text-red-600 dark:text-red-200">
+            Cuidado, esta ação é irreversível. Isso apagará todo o seu progresso de aulas e anotações.
+          </p>
+          <button
+            onClick={handleResetProgress}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            <i className="fas fa-trash mr-2"></i>
+            Resetar Progresso do Curso
+          </button>
       </div>
 
       {/* Mensagem de Feedback (movemos para o final) */}
       {message.text && (
         <div 
-          className={`fixed bottom-8 right-8 p-4 rounded-lg shadow-lg ${
+          className={`fixed bottom-8 right-8 p-4 rounded-lg shadow-lg z-50 ${
             message.type === 'success' ? 'bg-secondary-600 text-white' : 'bg-red-600 text-white'
           }`}
         >

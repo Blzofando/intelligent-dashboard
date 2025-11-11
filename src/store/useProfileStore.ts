@@ -9,11 +9,12 @@ const defaultProfile: UserProfile = {
   avatarPath: "/avatars/outros/o-01.png",
   gender: "prefiro-nao-dizer",
   birthDate: "",
+  focusArea: "Sem foco definido", // <-- ADICIONADO
   completedLessons: [], 
   lessonNotes: {},
-  studySettings: null, // Novo
-  studyPlan: null,     // Novo
-  studyStreak: 0,      // Novo
+  studySettings: null, 
+  studyPlan: null,     
+  studyStreak: 0,      
 };
 
 interface ProfileState {
@@ -44,6 +45,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        // Mescla os dados do DB com os padrões (para garantir que 'focusArea' exista)
         const profileData = { ...defaultProfile, ...docSnap.data() };
         set({ profile: profileData as UserProfile, isLoadingProfile: false }); 
       } else {

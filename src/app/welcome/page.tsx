@@ -32,6 +32,8 @@ const Step1Info: React.FC<Step1InfoProps> = ({ profile, setProfile, nextStep }) 
   const [displayName, setDisplayName] = useState(profile.displayName === "Novo Aluno" ? "" : profile.displayName);
   const [birthDate, setBirthDate] = useState(profile.birthDate || "");
   const [gender, setGender] = useState(profile.gender || "prefiro-nao-dizer");
+  // --- ADICIONADO ---
+  const [focusArea, setFocusArea] = useState(profile.focusArea === "Sem foco definido" ? "" : (profile.focusArea || ""));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,8 @@ const Step1Info: React.FC<Step1InfoProps> = ({ profile, setProfile, nextStep }) 
       alert("Por favor, insira um nome.");
       return;
     }
-    setProfile({ ...profile, displayName, birthDate, gender });
+    // --- ATUALIZADO ---
+    setProfile({ ...profile, displayName, birthDate, gender, focusArea: focusArea || "Sem foco definido" });
     nextStep();
   };
 
@@ -58,6 +61,21 @@ const Step1Info: React.FC<Step1InfoProps> = ({ profile, setProfile, nextStep }) 
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         />
       </div>
+      
+      {/* --- CAMPO DE FOCO ADICIONADO --- */}
+      <div>
+        <label htmlFor="focusArea" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Foco de Carreira (Opcional)</label>
+         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ex: "Power BI para Vendas", "Análise de RH", "Controle de Produção"</p>
+        <input
+          type="text"
+          id="focusArea"
+          value={focusArea}
+          onChange={(e) => setFocusArea(e.target.value)}
+          placeholder="Em qual área você quer focar seus estudos?"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+        />
+      </div>
+
       <div>
         <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
         <input
@@ -94,6 +112,7 @@ const Step1Info: React.FC<Step1InfoProps> = ({ profile, setProfile, nextStep }) 
 };
 
 // Componente da Etapa 2: Avatar
+// ... (Nenhuma alteração necessária no Step2Avatar) ...
 const Step2Avatar: React.FC<Step2AvatarProps> = ({ profile, setProfile, saveProfile, isSaving }) => {
   const [avatarPath, setAvatarPath] = useState(profile.avatarPath);
 
@@ -153,8 +172,9 @@ const Step2Avatar: React.FC<Step2AvatarProps> = ({ profile, setProfile, saveProf
   );
 };
 
-// --- COMPONENTE PRINCIPAL (PÁGINA) ---
 
+// --- COMPONENTE PRINCIPAL (PÁGINA) ---
+// ... (Nenhuma alteração necessária no componente principal) ...
 const WelcomePage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -178,7 +198,7 @@ const WelcomePage: React.FC = () => {
   };
 
   if (isLoadingProfile || !profileData) { 
-     return (
+    return (
       <div className="flex h-screen items-center justify-center">
         <i className="fas fa-spinner fa-spin text-4xl"></i>
       </div>
@@ -210,4 +230,3 @@ const WelcomePage: React.FC = () => {
 };
 
 export default WelcomePage;
-

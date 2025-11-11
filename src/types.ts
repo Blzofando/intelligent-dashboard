@@ -31,6 +31,7 @@ export interface YouTubeVideo {
 export interface UserProfile {
   displayName: string;
   birthDate: string; 
+  focusArea?: string;
   gender: 'masculino' | 'feminino' | 'outros' | 'prefiro-nao-dizer';
   avatarPath: string;
   completedLessons: string[]; 

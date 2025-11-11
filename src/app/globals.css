@@ -1,34 +1,5 @@
 @import "tailwindcss";
 
-/* Configurações do tema */
-@theme {
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  
-  /* Cores primárias (azul) */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  
-  /* Cores secundárias (verde) */
-  --color-secondary-50: #f0fdf4;
-  --color-secondary-100: #dcfce7;
-  --color-secondary-200: #bbf7d0;
-  --color-secondary-300: #86efac;
-  --color-secondary-400: #4ade80;
-  --color-secondary-500: #22c55e;
-  --color-secondary-600: #16a34a;
-  --color-secondary-700: #15803d;
-  --color-secondary-800: #166534;
-  --color-secondary-900: #14532d;
-}
-
 /* Estilos do Calendário */
 .react-calendar {
   width: 100%;
@@ -159,4 +130,12 @@
 
 .dark .react-calendar__month-view__days__day--neighboringMonth {
   color: rgb(75 85 99);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE e Edge */
+  scrollbar-width: none; /* Firefox */
 }
