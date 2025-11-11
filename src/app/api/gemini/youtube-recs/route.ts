@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YouTubeVideo } from '@/types';
-// --- IMPORTA O GEMINI ---
-import { GoogleGenerativeAI, GenerationConfig } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// --- CHAVE DO YOUTUBE ---
+// --- CHAVES (YouTube e Gemini) ---
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY as string;
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/search';
-
-// --- CHAVE DO GEMINI ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
-// Interfaces da API do YouTube
+// Interfaces
 interface YouTubeApiItem {
   id: { videoId: string };
-  snippet: {
-    title: string;
-    description: string;
-  };
+  snippet: { title: string; description: string; };
 }
 
 // --- FUNÇÃO DE BUSCA (YOUTUBE) ---
@@ -34,7 +28,10 @@ async function searchYouTube(query: string, count: number): Promise<YouTubeApiIt
   });
   
   const response = await fetch(`${YOUTUBE_API_URL}?${params.toString()}`);
-  if (!response.ok) return [];
+  if (!response.ok) {
+    console.warn(`Aviso na busca do YouTube por "${query}": Status ${response.status}`);
+    return [];
+  }
   const data = await response.json();
   return data.items || [];
 }
@@ -61,17 +58,13 @@ async function filterWithGemini(videos: YouTubeApiItem[], query: string, focus: 
   try {
     const result = await geminiModel.generateContent(prompt);
     const responseText = result.response.text();
-    
-    // Limpa a resposta da IA (remove ```json e ```)
     const cleanedJson = responseText.replace(/```json\n|```/g, "").trim();
-    
     const filteredVideos: YouTubeApiItem[] = JSON.parse(cleanedJson);
     return filteredVideos;
 
   } catch (e) {
     console.error("Erro do Gemini ao filtrar:", e);
-    // Se o Gemini falhar, apenas retorne os 10 primeiros da busca original
-    return videos.slice(0, 10);
+    return videos.slice(0, 10); // Retorna os 10 primeiros se a IA falhar
   }
 }
 
@@ -86,9 +79,17 @@ export async function POST(request: NextRequest) {
 
     const hasFocus = focusArea && focusArea !== "Sem foco definido";
     
-    // 1. Criar as queries de busca
-    const topicQuery = `tutorial Power BI "${moduleTitle}" "${nextTopic}"`;
-    const focusQuery = `Power BI "${nextTopic}" aplicado a "${focusArea}"`;
+    // --- MUDANÇA NAS QUERIES (MAIS AMPLAS) ---
+    // Em vez de usar 'nextTopic' (a aula), usamos 'moduleTitle' (o módulo).
+    
+    // Busca 1: Tópico Geral do Módulo
+    // Ex: "tutorial Power BI DAX"
+    const topicQuery = `tutorial Power BI "${moduleTitle}"`;
+    
+    // Busca 2: Foco aplicado ao Módulo
+    // Ex: "Power BI DAX para Vendas"
+    const focusQuery = `Power BI "${moduleTitle}" aplicado a "${focusArea}"`;
+    // --- FIM DA MUDANÇA ---
 
     // 2. Buscar 20 vídeos no YouTube (10 de cada)
     let searchResults: YouTubeApiItem[] = [];
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       searchResults = await searchYouTube(topicQuery, 20);
     }
 
-    // 3. Usar o Gemini para filtrar os 20 resultados e selecionar 10
+    // 3. Usar o Gemini para filtrar os 20 resultados
     const finalQuery = hasFocus ? `${topicQuery} E ${focusQuery}` : topicQuery;
     const filteredVideos = await filterWithGemini(searchResults, finalQuery, focusArea);
 
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
       return {
         id: videoId,
         title: item.snippet.title,
-        description: item.snippet.description, // Ainda pegamos, mas o front vai esconder
+        description: item.snippet.description,
         thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
         embedUrl: `https://www.youtube.com/embed/${videoId}`,
       };

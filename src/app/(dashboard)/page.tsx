@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Clock, BookOpen, Play } from 'lucide-react';
 import lessonDurations from '@/data/lessonDurations.json';
 
+// --- (Sem alterações nas funções e constantes de estatística) ---
 const durations: Record<string, number> = lessonDurations;
 const PIE_COLORS = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
 const PROGRESS_COLORS = ['#2563eb', '#e5e7eb'];
@@ -24,6 +25,8 @@ function formatDuration(totalSeconds: number): string {
   if (minutes > 0 || hours === 0) result += `${minutes}m`;
   return result.trim();
 }
+// --- FIM (Sem alterações) ---
+
 
 const Dashboard: React.FC = () => {
   const { profile } = useProfileStore();
@@ -34,6 +37,7 @@ const Dashboard: React.FC = () => {
   const [modalVideoUrl, setModalVideoUrl] = useState<string | null>(null);
 
   const nextLesson = useMemo(() => {
+    // ... (Sem alterações) ...
     for (const module of course.modules) {
       for (const lesson of module.lessons) {
         if (!completedLessons.has(lesson.id)) {
@@ -45,6 +49,7 @@ const Dashboard: React.FC = () => {
   }, [course, completedLessons]);
 
   const { totalLessons, completedCount, progressPercentage, totalTimeStudied, timeByCategory } = useMemo(() => {
+    // ... (Lógica de estatísticas, sem alterações) ...
     const total = course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
     const completed = completedLessons.size;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -81,35 +86,71 @@ const Dashboard: React.FC = () => {
     { name: 'Restantes', value: totalLessons - completedCount },
   ];
 
+  // --- MUDANÇA: LÓGICA DE CACHE SEMANAL ---
   useEffect(() => {
     const fetchYoutubeRecommendations = async () => {
       if (!profile || !nextLesson) {
         setIsLoadingYoutubeVideos(false);
         return;
       }
+      
+      const focus = profile.focusArea || "Sem foco definido";
+      const module = nextLesson.moduleTitle;
+      
+      // 1. Criar uma chave de cache única para este módulo e foco
+      const CACHE_KEY = `youtubeRecs_${module}_${focus}`;
+      const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+      // 2. Tentar ler do cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const { videos, timestamp } = JSON.parse(cachedData);
+        const isStale = (Date.now() - timestamp) > CACHE_DURATION;
+        
+        if (!isStale) {
+          setYoutubeVideos(videos); // Usa o cache
+          setIsLoadingYoutubeVideos(false);
+          return; // Para aqui, não busca na API
+        }
+      }
+
+      // 3. Se o cache não existe ou está velho, buscar na API
       setIsLoadingYoutubeVideos(true);
       try {
         const response = await fetch('/api/gemini/youtube-recs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            focusArea: profile.focusArea || "Sem foco definido",
+            focusArea: focus,
             nextTopic: nextLesson.title,
-            moduleTitle: nextLesson.moduleTitle 
+            moduleTitle: module
           }),
         });
+        
         if (!response.ok) throw new Error('Falha ao buscar recomendações');
+        
         const videos: YouTubeVideo[] = await response.json();
         setYoutubeVideos(videos);
+
+        // 4. Salvar os novos resultados e o timestamp no cache
+        const newCacheData = {
+          videos: videos,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newCacheData));
+
       } catch (error) {
         console.error(error);
-        setYoutubeVideos([]); 
+        setYoutubeVideos([]); // Define como vazio em caso de erro
       } finally {
         setIsLoadingYoutubeVideos(false);
       }
     };
+    
     fetchYoutubeRecommendations();
+  // As dependências garantem que a busca rode se o usuário mudar de módulo
   }, [profile, nextLesson]); 
+  // --- FIM DA MUDANÇA ---
 
   const handleSelectVideo = (embedUrl: string | null) => {
     if (embedUrl) setModalVideoUrl(embedUrl);
@@ -121,6 +162,7 @@ const Dashboard: React.FC = () => {
         
         {/* Saudação */}
         <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+           {/* ... (código da saudação, sem alteração) ... */}
            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
             Olá, {profile?.displayName}!
           </h1>
@@ -151,6 +193,7 @@ const Dashboard: React.FC = () => {
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* ... (código das estatísticas, sem alteração) ... */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
             <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Progresso Geral</h2>
             <div className="w-48 h-48">
@@ -183,9 +226,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* --- MUDANÇA: ORDEM TROCADA --- */}
-
-        {/* Carrossel do YouTube (AGORA VEM ANTES) */}
+        {/* Carrossel do YouTube */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <YoutubeCarousel 
               videos={youtubeVideos}
@@ -195,8 +236,9 @@ const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Gráfico de Donut (AGORA VEM DEPOIS) */}
+        {/* Gráfico de Donut */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+           {/* ... (código do gráfico, sem alteração) ... */}
            <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Tempo de Estudo por Categoria</h2>
           {totalTimeStudied > 0 ? (
             <div className="w-full h-96"> 
