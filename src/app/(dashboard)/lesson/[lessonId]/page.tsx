@@ -4,11 +4,11 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCourseContext } from '@/context/CourseProvider';
-import VideoPlayer from '@/components/VideoPlayer'; // Importa o seu player
-import { CheckCircle, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
-import { Lesson, Module } from '@/types'; // Importa nossos tipos
+import VideoPlayer from '@/components/VideoPlayer'; 
+// --- 1. IMPORTAR O ÍCONE DE DOWNLOAD ---
+import { CheckCircle, BookOpen, ChevronRight, ChevronLeft, Download } from 'lucide-react';
+import { Lesson, Module } from '@/types'; 
 
-// 1. CORREÇÃO: Definimos um tipo para a "aula achatada" que usamos para navegação
 type FlatLesson = Lesson & { moduleId: string; moduleTitle: string };
 
 const LessonPlayerPage: React.FC = () => {
@@ -20,9 +20,8 @@ const LessonPlayerPage: React.FC = () => {
   
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
 
-  // 2. CORREÇÃO: O useMemo foi totalmente reescrito para ser limpo e à prova de erros
+  // useMemo está perfeito, sem alterações
   const { lesson, module, nextLesson, previousLesson } = useMemo(() => {
-    // Achatamos todas as aulas em um único array com infos do módulo
     const allLessons: FlatLesson[] = course.modules.flatMap(mod => 
       mod.lessons.map(les => ({
         ...les,
@@ -30,30 +29,21 @@ const LessonPlayerPage: React.FC = () => {
         moduleTitle: mod.title
       }))
     );
-
-    // Encontramos o índice da aula atual
     const currentIndex = allLessons.findIndex(l => l.id === lessonId);
-
-    // Se não encontrar, retorna nulo para tudo
     if (currentIndex === -1) {
       return { lesson: null, module: null, nextLesson: null, previousLesson: null };
     }
-
-    // Se encontrar, pega tudo
     const currentLesson = allLessons[currentIndex];
-    // O 'module' é do tipo Module, mas 'currentLesson' é FlatLesson (que também é uma Lesson)
     const currentModule = course.modules.find(m => m.id === currentLesson.moduleId); 
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
     const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
-
     return {
-      lesson: currentLesson as Lesson, // Trata como Lesson base
+      lesson: currentLesson as Lesson,
       module: currentModule || null,
       nextLesson: nextLesson,
       previousLesson: prevLesson
     };
   }, [lessonId, course]);
-  // --- FIM DA CORREÇÃO ---
 
   const isCompleted = completedLessons.has(lessonId);
 
@@ -77,7 +67,6 @@ const LessonPlayerPage: React.FC = () => {
     }
   };
 
-  // Esta verificação agora funciona, corrigindo os erros 'never'
   if (!lesson || !module) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -91,7 +80,7 @@ const LessonPlayerPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Breadcrumb */}
+      {/* Breadcrumb (sem alteração) */}
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <Link href="/course" className="hover:text-primary-600 dark:hover:text-primary-400">
           Módulos
@@ -107,7 +96,7 @@ const LessonPlayerPage: React.FC = () => {
         <span className="text-gray-800 dark:text-white font-medium">{lesson.title}</span>
       </div>
 
-      {/* Cabeçalho da Aula */}
+      {/* Cabeçalho da Aula (sem alteração) */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -127,7 +116,6 @@ const LessonPlayerPage: React.FC = () => {
               )}
             </div>
           </div>
-
           {!isCompleted && (
             <button
               onClick={handleComplete}
@@ -138,7 +126,6 @@ const LessonPlayerPage: React.FC = () => {
             </button>
           )}
         </div>
-
         {showCompletionMessage && (
           <div className="mt-4 p-4 bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 rounded-lg text-green-800 dark:text-green-200">
             <div className="flex items-center gap-2">
@@ -149,14 +136,14 @@ const LessonPlayerPage: React.FC = () => {
         )}
       </div>
 
-      {/* Player de Vídeo (Seu novo componente) */}
+      {/* Player de Vídeo (sem alteração) */}
       <VideoPlayer 
-        lessonId={lesson.id} // Passa "F001"
+        lessonId={lesson.id}
         lessonTitle={lesson.title}
         onComplete={handleComplete}
       />
 
-      {/* Navegação entre Aulas */}
+      {/* Navegação entre Aulas (sem alteração) */}
       <div className="flex items-center justify-between gap-4">
         {previousLesson ? (
           <button
@@ -174,7 +161,6 @@ const LessonPlayerPage: React.FC = () => {
         ) : (
           <div></div> // Espaçador
         )}
-
         {nextLesson ? (
           <button
             onClick={goToNextLesson}
@@ -198,21 +184,44 @@ const LessonPlayerPage: React.FC = () => {
         )}
       </div>
 
-      {/* Área de Recursos (Placeholder) */}
+      {/* --- 2. ÁREA DE RECURSOS ATUALIZADA --- */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
           Recursos da Aula
         </h2>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center">
-              <i className="fas fa-file-pdf text-primary-600 dark:text-primary-400"></i>
+
+          {/* Lógica condicional: */}
+          {lesson.materialUrl ? (
+            // SE TIVER LINK, MOSTRA O BOTÃO:
+            <a
+              href={lesson.materialUrl}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+            >
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center shrink-0">
+                <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">Baixar Materiais da Aula</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para fazer o download (.zip)</p>
+              </div>
+            </a>
+          ) : (
+            // SE NÃO TIVER LINK, MOSTRA MENSAGEM:
+            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
+                <BookOpen className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">Material de Apoio</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum material complementar para esta aula.</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-800 dark:text-white">Material de Apoio</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Em breve</p>
-            </div>
-          </div>
+          )}
+          {/* --- FIM DA LÓGICA --- */}
+
         </div>
       </div>
     </div>

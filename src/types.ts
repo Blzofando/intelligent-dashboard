@@ -54,6 +54,7 @@ export interface Module {
 export interface Lesson {
   id: string;
   title: string;
+  materialUrl?: string; // <-- ADICIONE ESTA LINHA
 }
 
 // --- Tipos do Gemini (sem alteração) ---
