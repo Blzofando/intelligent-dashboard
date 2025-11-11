@@ -6,14 +6,14 @@ import { useCourseContext } from '@/context/CourseProvider';
 import { useProfileStore } from '@/store/useProfileStore';
 import { getRecommendations } from '@/services/geminiService';
 import Link from 'next/link';
-import lessonDurations from '@/data/lessonDurations.json'; // Importa o tempo das aulas
+import { Clock, BookOpen, Play, Lightbulb, Loader2 } from 'lucide-react';
+import lessonDurations from '@/data/lessonDurations.json';
 
 const durations: Record<string, number> = lessonDurations;
 
 const PIE_COLORS = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
-const PROGRESS_COLORS = ['#2563eb', '#e5e7eb']; // Cor primária e cor de fundo (cinza)
+const PROGRESS_COLORS = ['#2563eb', '#e5e7eb'];
 
-// Função para formatar segundos em "Xh Ym"
 function formatDuration(totalSeconds: number): string {
   if (!totalSeconds) return "0m";
   const hours = Math.floor(totalSeconds / 3600);
@@ -32,7 +32,6 @@ const Dashboard: React.FC = () => {
   const [isLoadingRecs, setIsLoadingRecs] = React.useState(false);
 
   const nextLesson = useMemo(() => {
-    // Lógica do "Continuar"
     for (const module of course.modules) {
       for (const lesson of module.lessons) {
         if (!completedLessons.has(lesson.id)) {
@@ -43,13 +42,11 @@ const Dashboard: React.FC = () => {
     return null; 
   }, [course, completedLessons]);
 
-  // --- LÓGICA DAS ESTATÍSTICAS ATUALIZADA ---
   const { totalLessons, completedCount, progressPercentage, totalTimeStudied, timeByCategory } = useMemo(() => {
     const total = course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
     const completed = completedLessons.size;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    // --- NOVA LÓGICA DO GRÁFICO (Tempo por Categoria) ---
     const categories = [
       { name: "Power Query", ids: ["module-3"] },
       { name: "Relacionamentos", ids: ["module-4"] },
@@ -75,15 +72,15 @@ const Dashboard: React.FC = () => {
       totalTime += timeForCategory;
       return {
         name: cat.name,
-        value: timeForCategory, // Tempo em segundos
+        value: timeForCategory,
       };
-    }).filter(cat => cat.value > 0); // Só mostra categorias que você estudou
+    }).filter(cat => cat.value > 0);
 
     return {
       totalLessons: total,
       completedCount: completed,
       progressPercentage: percentage,
-      totalTimeStudied: totalTime, // Tempo total em segundos
+      totalTimeStudied: totalTime,
       timeByCategory: categoryData,
     };
   }, [course, completedLessons]);
@@ -114,7 +111,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* --- SAUDAÇÃO E BOTÃO CONTINUAR --- */}
+      {/* Saudação */}
       <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
           Olá, {profile?.displayName}!
@@ -126,10 +123,10 @@ const Dashboard: React.FC = () => {
             </p>
             <Link 
               href={`/lesson/${nextLesson.id}`} 
-              className="group mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-px transform transition-all duration-200 relative z-20"
+              className="group mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-px transform transition-all duration-200"
             >
               <div className="bg-blue-700 p-1.5 rounded-md">
-                <i className="fas fa-play text-sm"></i>
+                <Play className="w-4 h-4" />
               </div>
               <span className="text-sm">
                 Continuar Aula: 
@@ -144,13 +141,13 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* --- PAINEL DE ESTATÍSTICAS --- */}
+      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Gráfico de Pizza (Progresso) */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-sm shadow-xs flex flex-col items-center justify-center">
+        {/* Gráfico de Pizza */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Progresso Geral</h2>
           <div className="w-48 h-48">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
@@ -176,31 +173,33 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         
-        {/* Cartão de Tempo Total */}
+        {/* Tempo Total */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-center items-center">
-          <i className="fas fa-clock text-4xl text-primary-500 mb-4"></i>
-          <p className="text-5xl font-bold">{formatDuration(totalTimeStudied)}</p>
-          <p className="text-gray-500 dark:text-gray-400">Tempo Total de Estudo</p>
+          <Clock className="w-10 h-10 text-primary-500 mb-4" />
+          <p className="text-5xl font-bold text-gray-800 dark:text-white">{formatDuration(totalTimeStudied)}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Tempo Total de Estudo</p>
         </div>
+        
+        {/* Aulas Concluídas */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-center items-center">
-          <i className="fas fa-book text-4xl text-primary-500 mb-4"></i>
-          <p className="text-5xl font-bold">{completedCount}</p>
-          <p className="text-gray-500 dark:text-gray-400">Aulas Concluídas</p>
+          <BookOpen className="w-10 h-10 text-primary-500 mb-4" />
+          <p className="text-5xl font-bold text-gray-800 dark:text-white">{completedCount}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Aulas Concluídas</p>
         </div>
       </div>
 
-      {/* --- 3. GRÁFICO DE DONUT (NOVO) --- */}
+      {/* Gráfico de Donut */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Tempo de Estudo por Categoria</h2>
         {totalTimeStudied > 0 ? (
           <div className="w-full h-96"> 
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={timeByCategory}
                   cx="50%"
                   cy="50%"
-                  innerRadius={80} // O "buraco" do Donut
+                  innerRadius={80}
                   outerRadius={120}
                   fill="#8884d8"
                   paddingAngle={5}
@@ -211,7 +210,7 @@ const Dashboard: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => formatDuration(value)} // Formata o tempo
+                  formatter={(value: number) => formatDuration(value)}
                   contentStyle={{ 
                     backgroundColor: 'rgba(31, 41, 55, 0.9)', 
                     borderColor: '#374151', 
@@ -224,7 +223,7 @@ const Dashboard: React.FC = () => {
                   align="right" 
                   verticalAlign="middle"
                   iconType="circle"
-                  formatter={(value, entry) => (
+                  formatter={(value) => (
                     <span className="text-gray-700 dark:text-gray-300">{value}</span>
                   )}
                 />
@@ -238,7 +237,7 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Recomendações (sem mudança) */}
+      {/* Recomendações */}
        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Recomendações da IA</h2>
           {recommendations ? (
@@ -249,9 +248,19 @@ const Dashboard: React.FC = () => {
                   <button
                       onClick={handleGetRecommendations}
                       disabled={isLoadingRecs || completedLessons.size === 0}
-                      className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                      {isLoadingRecs ? <><i className="fas fa-spinner fa-spin mr-2"></i>Gerando...</> : <><i className="fas fa-lightbulb mr-2"></i>Gerar Recomendações</>}
+                      {isLoadingRecs ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <Lightbulb className="w-4 h-4" />
+                          Gerar Recomendações
+                        </>
+                      )}
                   </button>
               </div>
           )}
@@ -261,4 +270,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-

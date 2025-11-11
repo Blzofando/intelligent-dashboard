@@ -1,9 +1,36 @@
-import { QuizQuestion, Flashcard, StudyPlan } from "@/types";
+import { QuizQuestion, Flashcard, StudyPlan, YouTubeVideo } from "@/types"; // Importa YouTubeVideo
 
 // Função para formatar data como "YYYY-MM-DD"
 function formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0];
 }
+
+
+
+// --- NOVA FUNÇÃO: Recomendações do YouTube (Carrossel) ---
+export const getYoutubeRecommendations = async (focusArea: string, nextTopic: string): Promise<YouTubeVideo[]> => {
+  try {
+    const response = await fetch('/api/gemini/youtube-recs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ focusArea, nextTopic }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro na resposta da API de recomendações do YouTube');
+    }
+
+    const data: YouTubeVideo[] = await response.json();
+    return data;
+
+  } catch (error) {
+    console.error("Erro ao chamar a API de recomendações do YouTube:", error);
+    return [];
+  }
+};
+
 
 // Versão "Falsa" (dummy) que retorna os tipos corretos
 const dummyPromise = <T,>(data: T): Promise<T> =>
