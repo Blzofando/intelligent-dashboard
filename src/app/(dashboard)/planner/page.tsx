@@ -10,11 +10,11 @@ import { StudyPlanDay, StudyPlan, StudySettings, UserProfile } from '@/types';
 import { BookOpen, CheckCircle, Target, Trophy, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
-// Tipagem do react-calendar
+// Tipagem
 import type { CalendarProps } from 'react-calendar';
-type Value = CalendarProps['value']; // Date | Date[] | null
+type Value = CalendarProps['value']; 
 
-// Formatação de data
+// Funções de Data
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
@@ -24,77 +24,75 @@ function formatDisplayDate(dateString: string): string {
   return `${day}/${month}/${year}`;
 }
 
-type ReorgStatus = 'idle' | 'checking' | 'reorganizing' | 'failed';
-
 const PlannerPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [reorgStatus, setReorgStatus] = useState<ReorgStatus>('idle');
-
+  
   const { user } = useAuthStore();
-  const { profile, isLoadingProfile, updateStudyPlan } = useProfileStore();
+  const { 
+    profile, // <-- Perfil completo
+    isLoadingProfile, 
+    updateStudyPlan,
+    isGeneratingPlan, 
+    setGeneratingPlan,
+  } = useProfileStore();
+  
+  // --- 1. CORREÇÃO: Acessar 'completedLessons' de dentro do 'profile' ---
+  const completedLessons = useMemo(() => new Set(profile?.completedLessons || []), [profile]);
+  // --- FIM DA CORREÇÃO ---
+  
   const plan = profile?.studyPlan;
   const settings = profile?.studySettings;
 
-  // Reorganize handler em useCallback
+  // Handler de Reorganização
   const handleReorganizePlan = useCallback(async (profileArg: UserProfile, settingsArg: StudySettings) => {
+    // ... (sem alteração) ...
     if (!user || !updateStudyPlan) return;
-    setReorgStatus('reorganizing');
+    setGeneratingPlan(true); 
     try {
       const response = await fetch('/api/gemini/reorganize-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: profileArg }),
       });
-
       if (!response.ok) throw new Error("Falha ao reorganizar o plano.");
-
       const newPlan: StudyPlan = await response.json();
       await updateStudyPlan(user.uid, settingsArg, newPlan);
-      setReorgStatus('idle');
     } catch (error) {
       console.error(error);
-      setReorgStatus('failed');
     }
-  }, [user, updateStudyPlan]);
+    setGeneratingPlan(false); 
+  }, [user, updateStudyPlan, setGeneratingPlan]);
 
+  // useEffect principal (mostra modal ou popup)
   useEffect(() => {
+    // ... (sem alteração) ...
     if (isLoadingProfile) return;
-
-    if (!plan && !isModalOpen) {
+    if (!plan && !isModalOpen && !isGeneratingPlan) {
       setIsModalOpen(true);
     }
+  }, [profile, isLoadingProfile, plan, isModalOpen, isGeneratingPlan]);
 
-    if (user && profile && plan && settings && reorgStatus === 'idle') {
-      const today = formatDate(new Date());
-      const missedLessons = plan.plan.some(day =>
-        day.date < today &&
-        day.lessons.some(lesson => !profile.completedLessons.includes(lesson.id))
-      );
-
-      if (missedLessons) {
-        setReorgStatus('checking');
-        // chama reorganização imediatamente (sem setTimeout obrigatório)
-        handleReorganizePlan(profile, settings);
-      }
-    }
-  }, [profile, isLoadingProfile, plan, settings, isModalOpen, user, reorgStatus, handleReorganizePlan]);
-
-  // handler do calendário: normaliza Value -> Date e garante tipo Date no state
+  // handler do calendário
   const handleCalendarChange = (value: Value) => {
+    // ... (sem alteração) ...
     const maybe = Array.isArray(value) ? value[0] : value;
     if (!maybe) return;
     const newDate = (typeof maybe === 'string') ? new Date(maybe) : maybe;
     setSelectedDate(newDate);
   };
 
+  // lessonsForSelectedDay
   const lessonsForSelectedDay: StudyPlanDay | undefined = useMemo(() => {
+    // ... (sem alteração) ...
     if (!plan) return undefined;
     const dateString = formatDate(selectedDate);
     return plan.plan.find(day => day.date === dateString);
   }, [plan, selectedDate]);
 
+  // lessonsTodayCount
   const lessonsTodayCount = useMemo(() => {
+    // ... (sem alteração) ...
     if (!plan) return 0;
     const dateString = formatDate(new Date());
     return plan.plan.find(day => day.date === dateString)?.lessons.length || 0;
@@ -109,43 +107,44 @@ const PlannerPage: React.FC = () => {
         </h1>
         {lessonsForSelectedDay ? (
           <ul className="mt-4 space-y-2">
-            {lessonsForSelectedDay.lessons.map(lesson => (
-              <li key={lesson.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <Link href={`/lesson/${lesson.id}`} className="font-medium hover:text-primary-600 dark:hover:text-primary-400">
-                  {lesson.title}
-                </Link>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{Math.round(lesson.duration / 60)} min</span>
-              </li>
-            ))}
+            
+            {/* --- 2. CORREÇÃO: Usar o 'completedLessons' (Set) --- */}
+            {lessonsForSelectedDay.lessons.map(lesson => {
+              const isCompleted = completedLessons.has(lesson.id); // Verifica no Set
+              
+              return (
+                <li key={lesson.id} className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${isCompleted ? 'opacity-50' : ''}`}>
+                  <Link 
+                    href={`/lesson/${lesson.id}`} 
+                    className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 ${isCompleted ? 'line-through' : ''}`}
+                  >
+                    {lesson.title}
+                  </Link>
+                  <span className={`text-sm text-gray-500 dark:text-gray-400 ${isCompleted ? 'line-through' : ''}`}>
+                    {Math.round(lesson.duration / 60)} min
+                  </span>
+                </li>
+              );
+            })}
+            {/* --- FIM DA CORREÇÃO --- */}
+
           </ul>
         ) : (
           <p className="mt-4 text-gray-500 dark:text-gray-400">
-            {plan ? "Nenhuma aula planejada para este dia." : "Você ainda não gerou um plano de estudos."}
+            {isGeneratingPlan ? "Seu plano está sendo criado pela IA..." : 
+             (plan ? "Nenhuma aula planejada para este dia." : "Gere seu plano de estudos para começar.")
+            }
           </p>
         )}
       </div>
 
-      {/* --- AVISO DE REORGANIZAÇÃO --- */}
-      {reorgStatus === 'checking' && (
-        <ReorgNotification
-          icon={AlertTriangle}
-          color="text-yellow-500"
-          message="Detectamos aulas atrasadas. Vamos reorganizar seu calendário..."
-        />
-      )}
-      {reorgStatus === 'reorganizing' && (
+      {/* --- AVISO DE GERAÇÃO (O POPUP) --- */}
+      {isGeneratingPlan && (
         <ReorgNotification
           icon={Loader2}
           color="text-blue-500"
-          message="Aguarde... Nossa IA (Gemini) está recalculando seu plano."
+          message="Aguarde... Nossa IA está criando seu plano de estudos. Isso pode levar uns 5 minutinhos. Você será avisado quando estiver pronto."
           isSpinning
-        />
-      )}
-      {reorgStatus === 'failed' && (
-        <ReorgNotification
-          icon={AlertTriangle}
-          color="text-red-500"
-          message="Falha ao reorganizar. Tente gerar um novo plano manualmente."
         />
       )}
       {/* --- FIM DO AVISO --- */}
@@ -168,7 +167,6 @@ const PlannerPage: React.FC = () => {
             selectRange={false}
             locale="pt-BR"
           />
-          
         </div>
 
         {/* 3. ESTATÍSTICAS (Direita) */}
@@ -185,23 +183,26 @@ const PlannerPage: React.FC = () => {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 transition-all"
+            disabled={isGeneratingPlan} 
+            className="w-full px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 transition-all disabled:bg-gray-500"
           >
-            {plan ? "Gerar Novo Plano de Estudos" : "Planejar Meus Estudos"}
+            {isGeneratingPlan ? "Gerando plano..." : (plan ? "Gerar Novo Plano de Estudos" : "Planejar Meus Estudos")}
           </button>
         </div>
       </div>
 
-      {/* 5. O MODAL */}
-      <StudyPlannerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {/* 5. O MODAL (Agora só abre se não estiver gerando) */}
+      {!isGeneratingPlan && (
+        <StudyPlannerModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
-// StatCard
+// Componentes StatCard e ReorgNotification
 const StatCard: React.FC<{ icon: React.ElementType; title: string; value: string; }> =
   ({ icon: Icon, title, value }) => (
     <div className="flex items-center gap-4">
@@ -215,7 +216,6 @@ const StatCard: React.FC<{ icon: React.ElementType; title: string; value: string
     </div>
   );
 
-// ReorgNotification
 const ReorgNotification: React.FC<{ icon: React.ElementType; color: string; message: string; isSpinning?: boolean; }> =
   ({ icon: Icon, color, message, isSpinning = false }) => (
     <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-gray-800 border border-yellow-300 dark:border-yellow-700">

@@ -6,10 +6,12 @@ export default function WelcomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Usamos o PrivateRoute aqui para garantir que apenas usuários logados
-  // (mas ainda não completos) possam ver esta página.
   return (
     <PrivateRoute>
+      {/* Layout atualizado: 
+        - Fundo 'dark:bg-gray-900' para combinar com o app.
+        - 'overflow-hidden' para evitar barras de rolagem durante a transição.
+      */}
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
         {children}
       </div>
