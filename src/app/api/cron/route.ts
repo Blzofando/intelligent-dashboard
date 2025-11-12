@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { StudySettings, StudyPlan, UserProfile, StudyPlanDay } from '@/types'; 
+import { getFirestore } from 'firebase-admin/firestore';
+import { StudySettings, StudyPlan, UserProfile, StudyPlanDay, Lesson } from '@/types'; 
 import { courseData } from '@/data/courseData'; 
 import lessonDurationsJSON from '@/data/lessonDurations.json';
 
 // --- CONFIGURAÇÃO DO FIREBASE ADMIN ---
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
-
 let adminApp: App;
 if (!getApps().length) {
   adminApp = initializeApp({
@@ -18,26 +16,106 @@ if (!getApps().length) {
   adminApp = getApps()[0];
 }
 const db = getFirestore(adminApp);
-// --- FIM DA CONFIGURAÇÃO ---
+
+// --- 1. A LÓGICA DA "CALCULADORA" RÁPIDA ---
+const lessonDurations: Record<string, number> = lessonDurationsJSON;
+const RHYTHM_TARGETS_SECONDS = {
+  suave: 30 * 60,
+  regular: 60 * 60,
+  intensivo: 90 * 60,
+};
+type DayKey = 'dom' | 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab';
+const allDaysMap: Record<DayKey, number> = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6 };
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0];
 }
 
-const GEMINI_MODEL = "gemini-1.5-pro-latest"; 
+// (Funções 'createMasterPlan' e 'applyUserSchedule' - Sem alterações)
+function createMasterPlan(
+  completedLessons: Set<string>, 
+  targetDuration: number
+): StudyPlanDay[] {
+  const masterPlan: StudyPlanDay[] = [];
+  let currentDayLessons: { id: string; title: string; duration: number }[] = [];
+  let currentDayDuration = 0;
+  for (const module of courseData.modules) {
+    for (const lesson of module.lessons) {
+      if (completedLessons.has(lesson.id)) {
+        continue;
+      }
+      const duration = lessonDurations[lesson.id] || 300; 
+      currentDayLessons.push({ ...lesson, duration });
+      currentDayDuration += duration;
+      if (currentDayDuration >= targetDuration) {
+        masterPlan.push({ date: "TBD", lessons: currentDayLessons });
+        currentDayLessons = [];
+        currentDayDuration = 0;
+      }
+    }
+  }
+  if (currentDayLessons.length > 0) {
+    masterPlan.push({ date: "TBD", lessons: currentDayLessons });
+  }
+  return masterPlan;
+}
+function applyUserSchedule(
+  masterPlan: StudyPlanDay[], 
+  settings: StudySettings
+): StudyPlanDay[] {
+  const finalPlan: StudyPlanDay[] = [];
+  const allowedDays = new Set(settings.daysOfWeek.map(d => allDaysMap[d]));
+  let currentDate = new Date(formatDate(new Date()) + 'T12:00:00Z'); 
+  for (const masterDay of masterPlan) {
+    while (!allowedDays.has(currentDate.getUTCDay())) {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+    finalPlan.push({
+      date: formatDate(currentDate),
+      lessons: masterDay.lessons
+    });
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  }
+  return finalPlan;
+}
 
+// Função que a "Calculadora" usa
+async function generateNewPlanFast(profile: UserProfile, settings: StudySettings): Promise<StudyPlan> {
+  const completedLessonSet = new Set(profile.completedLessons);
+  
+  // --- 2. A CORREÇÃO ESTÁ AQUI TAMBÉM ---
+  const targetDurationInSeconds = settings.mode === 'personalizado'
+    ? (settings.minutesPerDay || 60) * 60
+    : (RHYTHM_TARGETS_SECONDS[settings.mode] || 3600);
+  // --- FIM DA CORREÇÃO ---
+
+  const masterPlan = createMasterPlan(completedLessonSet, targetDurationInSeconds);
+  const finalPlan = applyUserSchedule(masterPlan, settings);
+
+  const expectedCompletionDate = finalPlan.length > 0 
+    ? finalPlan[finalPlan.length - 1].date 
+    : formatDate(new Date());
+
+  return {
+    plan: finalPlan,
+    expectedCompletionDate: expectedCompletionDate
+  };
+}
+// --- FIM DA LÓGICA DA "CALCULADORA" ---
+
+
+// --- A API DO CRON JOB ---
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
 
-  // Define as datas
   const today = new Date();
-  const todayString = formatDate(today); // O dia que ACABOU de começar
+  const todayString = formatDate(today);
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayString = formatDate(yesterday); // O dia que ACABOU de terminar
+  const yesterdayString = formatDate(yesterday);
 
   try {
     const usersSnapshot = await db.collection('users').get();
@@ -57,8 +135,7 @@ export async function GET(request: Request) {
       const settings = user.studySettings;
       let newStreak = user.studyStreak || 0;
       
-      // --- 1. LÓGICA DE OFENSIVA (STREAK) ---
-      // (Verifica o dia que acabou de terminar, 'yesterdayString')
+      // 1. Lógica da Ofensiva (Streak)
       const lastUpdate = user.lastStreakUpdate || null;
       if (lastUpdate !== todayString && lastUpdate !== yesterdayString) {
         if (newStreak > 0) {
@@ -67,48 +144,38 @@ export async function GET(request: Request) {
         }
       }
       
-      // --- 2. LÓGICA DE REORGANIZAÇÃO (Aulas Atrasadas OU Adiantadas) ---
+      // 2. Lógica de Reorganização
       let needsReorg = false;
-      let reorgReason = "N/A";
 
-      // VERIFICAÇÃO 1: Está ATRASADO?
-      // (Alguma aula ANTES de HOJE está incompleta?)
+      // Verificação 1: Está ATRASADO?
       const missedLessons = plan.plan.some(day =>
         day.date < todayString &&
-        day.lessons.some(lesson => !user.completedLessons.includes(lesson.id))
+        !day.lessons.every(lesson => user.completedLessons.includes(lesson.id))
       );
 
       if (missedLessons) {
         needsReorg = true;
-        reorgReason = "Aulas atrasadas";
       } else {
-        // VERIFICAÇÃO 2: Está ADIANTADO?
-        // (Se não está atrasado, vamos ver se ele já fez > 60% do dia de HOJE)
+        // Verificação 2: Está ADIANTADO?
         const dayToday = plan.plan.find(day => day.date === todayString);
-        
         if (dayToday && dayToday.lessons.length > 0) {
           const completedTodayCount = dayToday.lessons.filter(lesson => 
             user.completedLessons.includes(lesson.id)
           ).length;
-          
           const percentComplete = (completedTodayCount / dayToday.lessons.length) * 100;
-
-          // Se completou mais de 60% do dia seguinte (hoje), reformula
-          if (percentComplete > 60) {
+          if (percentComplete >= 50) { // Regra de 50%
             needsReorg = true;
-            reorgReason = `Usuário adiantado (${percentComplete.toFixed(0)}% completo)`;
           }
         }
       }
 
-      // 3. Executa a reorganização (se necessário)
+      // 3. Executa a reorganização
       let newPlan = plan;
       if (needsReorg) {
-        console.log(`Reorganizando plano para ${userId} (Motivo: ${reorgReason})...`);
-        newPlan = await reorganizePlanWithAI(user, settings);
+        console.log(`Reorganizando plano (rápido) para ${userId}...`);
+        newPlan = await generateNewPlanFast(user, settings);
         plansReorganized++;
       }
-      // --- FIM DA LÓGICA DE REORGANIZAÇÃO ---
 
       // 4. Salva as atualizações no Firebase
       await db.collection('users').doc(userId).update({
@@ -119,87 +186,14 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ 
-      message: "Cron Job executado com sucesso.",
+      message: "Cron Job (Rápido) executado com sucesso.",
       usersProcessed,
       streaksReset,
       plansReorganized
     });
 
   } catch (error: any) {
-    console.error("Erro no Cron Job:", error);
+    console.error("Erro no Cron Job (Rápido):", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
-
-
-// --- LÓGICA DA IA (REORGANIZAÇÃO) ---
-// (Esta parte não muda, é a mesma função que gera o plano)
-const lessonDurations: Record<string, number> = lessonDurationsJSON;
-type DayKey = 'dom' | 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab';
-const allDaysMap: Record<DayKey, number> = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6 };
-type PartialLessonFromAI = { id: string; title: string; };
-type PlanFromIA = { 
-  plan: { date: string; lessons: PartialLessonFromAI[]; }[], 
-  expectedCompletionDate: string 
-};
-
-async function reorganizePlanWithAI(profile: UserProfile, settings: StudySettings): Promise<StudyPlan> {
-  const { completedLessons } = profile;
-  const allPendingLessons: { id: string, title: string, duration: number }[] = []; 
-  
-  for (const module of courseData.modules) {
-    for (const lesson of module.lessons) {
-      if (!completedLessons.includes(lesson.id)) {
-        allPendingLessons.push({ 
-          id: lesson.id, 
-          title: lesson.title,
-          duration: lessonDurations[lesson.id] || 300 
-        });
-      }
-    }
-  }
-
-  if (allPendingLessons.length === 0) {
-    return { plan: [], expectedCompletionDate: formatDate(new Date()) };
-  }
-
-  const allowedDaysNum = new Set(settings.daysOfWeek.map(d => allDaysMap[d]));
-  const forbiddenDaysStr = (Object.keys(allDaysMap) as DayKey[])
-    .filter(day => !allowedDaysNum.has(allDaysMap[day]))
-    .join(', ') || "Nenhum";
-  
-  const startDate = formatDate(new Date()); // Reorganiza a partir de HOJE
-
-  const prompt = `
-    REORGANIZAÇÃO DE PLANO.
-    O plano anterior do aluno está desatualizado. Crie um novo plano.
-    Responda APENAS com o objeto JSON.
-    Meta Diária: ${settings.minutesPerDay} minutos (${settings.minutesPerDay * 60} segundos).
-    Dias de Estudo: ${settings.daysOfWeek.join(', ')}.
-    Dias de Folga: ${forbiddenDaysStr}.
-    Data de Início (Hoje): ${startDate}.
-    Mantenha a ordem cronológica.
-
-    Formato: { "plan": [...], "expectedCompletionDate": "YYYY-MM-DD" }
-
-    Aulas Pendentes (id, title, duration_in_seconds):
-    ${JSON.stringify(allPendingLessons)} 
-  `;
-
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { responseMimeType: "application/json" } });
-  
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
-  const planData = JSON.parse(responseText) as PlanFromIA;
-
-  const planWithDurations: StudyPlanDay[] = planData.plan.map((day) => ({
-    ...day,
-    lessons: day.lessons.map((lesson) => ({
-      ...lesson,
-      duration: lessonDurations[lesson.id] || 300
-    }))
-  }));
-
-  return { ...planData, plan: planWithDurations };
 }

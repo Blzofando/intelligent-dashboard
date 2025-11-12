@@ -4,19 +4,20 @@ import React, { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { StudySettings, StudyPlan } from '@/types';
-import { Check, Loader2, Rocket, Brain, Feather, CalendarDays } from 'lucide-react';
+// --- MUDANÇA: Importado o novo ícone ---
+import { Check, Loader2, Rocket, Brain, Feather, CalendarDays, SlidersHorizontal } from 'lucide-react';
 import Calendar from 'react-calendar'; 
 import 'react-calendar/dist/Calendar.css'; 
 
-// 1. CORREÇÃO DA IMPORTAÇÃO DE TIPOS
+// Importação de tipos
 import type { CalendarProps } from 'react-calendar';
-type Value = CalendarProps['value']; // O tipo correto é 'Value'
+type Value = CalendarProps['value'];
 
 // Tipos dos dias (para o formulário)
 type DayOfWeek = 'dom' | 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab';
 const allDays: DayOfWeek[] = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
-// Função para formatar data como "YYYY-MM-DD"
+// Função para formatar data
 function formatDate(date: Date): string {
     return date.toISOString().split('T')[0];
 }
@@ -36,12 +37,12 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
   
   // Etapa 2
   const [daysOfWeek, setDaysOfWeek] = useState<Set<DayOfWeek>>(new Set()); 
-  const [startDate, setStartDate] = useState<Value>(new Date()); // 2. CORREÇÃO: O estado aceita 'Value'
+  const [startDate, setStartDate] = useState<Value>(new Date());
 
-  // Etapa 3
-  const [focusArea, setFocusArea] = useState('');
+  // --- MUDANÇA: 'focusArea' foi removido deste state ---
 
   const { user } = useAuthStore();
+  // --- MUDANÇA: Pegamos o 'profile' para ler o foco ---
   const { profile, updateStudyPlan } = useProfileStore();
 
   if (!isOpen) return null;
@@ -53,46 +54,58 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
     setDaysOfWeek(newDays);
   };
 
-  const handleModeSelect = (mode: 'suave' | 'regular' | 'intensivo', minutes: number) => {
-    setMode(mode);
-    setMinutesPerDay(minutes);
-    setStep(2); 
+  // --- MUDANÇA: Lógica do modo personalizado ---
+  const handleModeSelect = (
+    newMode: 'suave' | 'regular' | 'intensivo' | 'personalizado', 
+    minutes?: number
+  ) => {
+    setMode(newMode);
+    if (minutes) {
+      // Se for um modo fixo (Suave, Regular, Intensivo), define os minutos
+      setMinutesPerDay(minutes);
+    } else if (newMode === 'personalizado') {
+      // Se for personalizado, mantém o valor atual (ou define um padrão se não for 120)
+      if (mode !== 'personalizado') {
+        setMinutesPerDay(120); // Padrão de 2h
+      }
+    }
   };
+  // --- FIM DA MUDANÇA ---
 
-  // 3. CORREÇÃO: A função de handler agora aceita 'Value'
   const handleCalendarChange = (value: Value) => {
-    setStartDate(value); // O estado agora pode aceitar Value (Date, Date[], null)
+    const dateToSave = Array.isArray(value) ? value[0] : value;
+    if (dateToSave) {
+        setStartDate(dateToSave);
+    }
   };
 
-  const handleGeneratePlan = async (useFocus: boolean) => {
+  // --- MUDANÇA: A função de gerar plano agora é chamada na Etapa 2 ---
+  const handleGeneratePlan = async () => {
     if (!user || !profile || !startDate) return;
     setIsLoading(true);
 
-    // 4. CORREÇÃO: Garante que estamos pegando a data certa, mesmo se for um range
     const dateToSave = Array.isArray(startDate) ? startDate[0] : startDate;
 
-    // --- 5. CORREÇÃO DO ERRO 2 ---
-    // Precisamos garantir que dateToSave é um objeto Date, não null ou string
     let finalDate: Date;
     if (typeof dateToSave === 'string') {
-      finalDate = new Date(dateToSave); // Converte string para Date
+      finalDate = new Date(dateToSave);
     } else if (dateToSave === null) {
-      finalDate = new Date(); // Fallback para hoje se for nulo
+      finalDate = new Date();
     } else {
-      finalDate = dateToSave; // Já é um Date
+      finalDate = dateToSave;
     }
-    // --- FIM DA CORREÇÃO ---
 
     const settings: StudySettings = {
       mode,
       minutesPerDay,
       daysOfWeek: Array.from(daysOfWeek),
-      focusArea: useFocus ? focusArea : "", 
-      startDate: formatDate(finalDate), // Usa a data 100% segura
+      // Pega o foco do PERFIL, não mais do modal
+      focusArea: profile.focusArea || "Sem foco definido", 
+      startDate: formatDate(finalDate),
     };
 
     try {
-      // Chama a API do Gemini
+      // Chama a API rápida (calculadora)
       const response = await fetch('/api/gemini/generate-plan', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,7 +116,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
       });
 
       if (!response.ok) {
-        throw new Error("Falha ao gerar o plano (Gemini).");
+        throw new Error("Falha ao gerar o plano.");
       }
 
       const plan: StudyPlan = await response.json();
@@ -118,7 +131,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
@@ -132,11 +145,40 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
           {step === 1 && (
             <div className="flex flex-col gap-4">
               <h3 className="text-lg font-semibold">1. Qual é o seu ritmo de estudo?</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* --- MUDANÇA: Grid com 4 colunas --- */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <ModeCard icon={Feather} title="Suave" description="Aprox. 30 min / dia" onClick={() => handleModeSelect('suave', 30)} isSelected={mode === 'suave'} />
                 <ModeCard icon={Brain} title="Regular" description="Aprox. 1h / dia" onClick={() => handleModeSelect('regular', 60)} isSelected={mode === 'regular'} />
                 <ModeCard icon={Rocket} title="Intensivo" description="Aprox. 1h 30min / dia" onClick={() => handleModeSelect('intensivo', 90)} isSelected={mode === 'intensivo'} />
+                <ModeCard icon={SlidersHorizontal} title="Personalizado" description="Você escolhe" onClick={() => handleModeSelect('personalizado')} isSelected={mode === 'personalizado'} />
               </div>
+              
+              {/* --- MUDANÇA: Input slider para modo personalizado --- */}
+              {mode === 'personalizado' && (
+                <div className="pt-4 space-y-2">
+                   <label htmlFor="custom-minutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                     Tempo de estudo diário: <span className="font-bold text-primary-500">{minutesPerDay} minutos</span>
+                   </label>
+                   <input
+                    id="custom-minutes"
+                    type="range"
+                    min="30"    // 30 min
+                    max="240"   // 4 horas
+                    step="15"
+                    value={minutesPerDay}
+                    onChange={(e) => setMinutesPerDay(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-thumb:bg-primary-600"
+                   />
+                </div>
+              )}
+              {/* --- FIM DA MUDANÇA --- */}
+
+              <button 
+                onClick={() => setStep(2)}
+                className="w-full px-6 py-2 mt-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                Próximo
+              </button>
             </div>
           )}
 
@@ -152,7 +194,6 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
                 </div>
               </div>
               
-              {/* Seleção de Data de Início */}
               <div>
                 <h3 className="text-lg font-semibold">3. Quando você quer começar?</h3>
                 <div className="flex justify-center p-2 rounded-lg">
@@ -167,62 +208,25 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
                 </div>
               </div>
 
+              {/* --- MUDANÇA: Botão "Próximo" agora é "Gerar Plano" --- */}
               <button 
-                onClick={() => setStep(3)}
-                disabled={daysOfWeek.size === 0}
-                className="w-full px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400"
+                onClick={handleGeneratePlan}
+                disabled={daysOfWeek.size === 0 || isLoading}
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2"
               >
-                Próximo (Foco)
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Check className="w-5 h-5" />
+                )}
+                {isLoading ? 'Gerando Plano...' : 'Gerar Novo Plano'}
               </button>
+              {/* --- FIM DA MUDANÇA --- */}
             </div>
           )}
 
-          {/* ETAPA 3: FOCO */}
-          {step === 3 && (
-            <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-semibold">4. (Opcional) Deseja focar em alguma área?</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Ex: "Power BI focado na área de licitação"
-              </p>
-              <textarea
-                value={focusArea}
-                onChange={(e) => setFocusArea(e.target.value)}
-                placeholder="Descreva seu foco aqui..."
-                className="w-full h-24 p-2 border rounded-md"
-              />
-              <div className="flex flex-col-reverse sm:flex-row justify-between gap-4">
-                
-                {focusArea.trim() === '' ? (
-                  // Se NÃO houver texto
-                  <button 
-                    onClick={() => handleGeneratePlan(false)} 
-                    disabled={isLoading}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
-                  >
-                    {isLoading ? <Loader2 className="animate-spin" /> : 'Pular e Gerar Plano'}
-                  </button>
-                ) : (
-                  // Se HÁ texto
-                  <>
-                    <button 
-                      onClick={() => handleGeneratePlan(false)}
-                      disabled={isLoading}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:bg-gray-400"
-                    >
-                      {isLoading ? 'Aguarde...' : 'Pular Foco'}
-                    </button>
-                    <button 
-                      onClick={() => handleGeneratePlan(true)}
-                      disabled={isLoading}
-                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
-                    >
-                      {isLoading ? <Loader2 className="animate-spin" /> : 'Gerar Plano com Foco'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          {/* --- MUDANÇA: ETAPA 3 FOI REMOVIDA --- */}
+          
         </div>
       </div>
     </div>
@@ -234,12 +238,12 @@ const ModeCard: React.FC<{icon: React.ElementType, title: string, description: s
   ({ icon: Icon, title, description, onClick, isSelected = false }) => (
   <button 
     onClick={onClick} 
-    className={`p-6 border-2 rounded-lg text-left transition-all ${
+    className={`p-6 border-2 rounded-lg text-left transition-all h-full ${
       isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700'
     }`}
   >
     <Icon className="w-8 h-8 text-primary-500 mb-2" />
-    <h4 className="text-lg font-bold">{title}</h4>
+    <h4 className="text-lg font-bold dark:text-white">{title}</h4>
     <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
   </button>
 );
@@ -248,11 +252,10 @@ const DayButton: React.FC<{day: string, isSelected: boolean, onClick: () => void
   ({ day, isSelected, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-12 h-12 rounded-full font-semibold transition-colors ${
+    className={`flex-1 w-12 h-12 rounded-full font-semibold transition-colors ${
       isSelected ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200'
     }`}
   >
     {day.toUpperCase()}
   </button>
 );
-

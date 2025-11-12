@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { AVATAR_LIST } from '@/data/avatars';
 import { UserProfile, StudySettings, StudyPlan, YouTubeVideo } from '@/types';
-import { Loader2, Rocket, Brain, Feather, CalendarDays, User, Smile, Check } from 'lucide-react';
+import { Loader2, Rocket, Brain, Feather, CalendarDays, User, Smile, Check, SlidersHorizontal } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; 
 import { courseData } from '@/data/courseData'; 
@@ -20,7 +20,6 @@ type CalendarValue = React.ComponentProps<typeof Calendar>['value'];
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
-
 const isToday = (date: Date) => {
   const today = new Date();
   return date.getDate() === today.getDate() &&
@@ -39,7 +38,7 @@ const WelcomePage: React.FC = () => {
     setGeneratingPlan, 
     updateStudyPlan,   
     updateVideoRecs,
-    setShowPlanReadyToast // Pega a nova função do toast
+    setShowPlanReadyToast
   } = useProfileStore(); 
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -96,7 +95,6 @@ const WelcomePage: React.FC = () => {
 
     router.push('/');
 
-    // Roda as APIs em "fire-and-forget"
     generateBackgroundTasks(user.uid, finalSettings, profile.completedLessons);
   };
 
@@ -106,7 +104,7 @@ const WelcomePage: React.FC = () => {
     completedLessons: string[]
   ) => {
     try {
-      // 5a. Gerar o Plano de Estudo
+      // Gerar o Plano de Estudo
       const planResponse = await fetch('/api/gemini/generate-plan', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +116,7 @@ const WelcomePage: React.FC = () => {
       const newPlan: StudyPlan = await planResponse.json();
       await updateStudyPlan(uid, settings, newPlan); 
 
-      // 5b. Gerar as Recomendações de Vídeo
+      // Gerar as Recomendações de Vídeo
       const firstModule = courseData.modules[0];
       const firstLesson = firstModule.lessons[0]; 
 
@@ -140,9 +138,8 @@ const WelcomePage: React.FC = () => {
     } catch (error) {
       console.error("Erro ao gerar tarefas em segundo plano:", error);
     } finally {
-      // 6. Avisa ao app que a geração terminou (e dispara o toast)
       setGeneratingPlan(false);
-      setShowPlanReadyToast(true); // <-- Dispara o toast!
+      setShowPlanReadyToast(true);
     }
   };
 
@@ -210,7 +207,7 @@ const WelcomePage: React.FC = () => {
 
 // --- COMPONENTES FILHOS (AS 3 ETAPAS) ---
 
-// Stepper
+// Stepper (sem alteração)
 const WelcomeStepper: React.FC<{ currentStep: number }> = ({ currentStep }) => (
   <div className="flex justify-between items-center w-3/4 mx-auto mb-6">
     <StepCircle icon={User} step={1} currentStep={currentStep} title="Perfil" />
@@ -243,9 +240,7 @@ const Step1_UserInfo: React.FC<{
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   onNext: () => void;
 }> = ({ formData, setFormData, onNext }) => {
-  
   const [isNameValid, setIsNameValid] = useState(true);
-  
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.displayName.trim()) {
@@ -254,48 +249,37 @@ const Step1_UserInfo: React.FC<{
     }
     onNext();
   };
-
   return (
     <form onSubmit={handleNext} className="space-y-5">
       <h2 className="text-xl font-semibold text-center text-gray-700 dark:text-gray-300 mb-6">Suas Informações</h2>
-      
       <div>
         <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seu Nome (ou apelido)</label>
         <input
-          type="text"
-          id="displayName"
-          value={formData.displayName}
+          type="text" id="displayName" value={formData.displayName}
           onChange={(e) => {
             setFormData({ ...formData, displayName: e.target.value });
             setIsNameValid(true);
           }}
-          required
-          placeholder="Como devemos te chamar?"
+          required placeholder="Como devemos te chamar?"
           className={`h-12 px-4 mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500 ${!isNameValid ? 'border-red-500' : ''}`}
         />
         {!isNameValid && <p className="text-xs text-red-500 mt-1">O nome é obrigatório.</p>}
       </div>
-
       <div>
         <label htmlFor="focusArea" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Foco de Carreira (Opcional)</label>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ex: "Vendas", "Análise de RH", "Licitações"</p>
         <input
-          type="text"
-          id="focusArea"
-          value={formData.focusArea}
+          type="text" id="focusArea" value={formData.focusArea}
           onChange={(e) => setFormData({ ...formData, focusArea: e.target.value })}
           placeholder="Em qual área você quer focar?"
           className="h-12 px-4 mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         />
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Nasc.</label>
           <input
-            type="date"
-            id="birthDate"
-            value={formData.birthDate}
+            type="date" id="birthDate" value={formData.birthDate}
             onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
             className="h-12 px-4 mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           />
@@ -303,8 +287,7 @@ const Step1_UserInfo: React.FC<{
         <div>
           <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gênero</label>
           <select
-            id="gender"
-            value={formData.gender}
+            id="gender" value={formData.gender}
             onChange={(e) => setFormData({ ...formData, gender: e.target.value as UserProfile['gender'] })}
             className="h-12 px-4 mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
@@ -315,7 +298,6 @@ const Step1_UserInfo: React.FC<{
           </select>
         </div>
       </div>
-      
       <button
         type="submit"
         className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 font-semibold"
@@ -326,7 +308,7 @@ const Step1_UserInfo: React.FC<{
   );
 };
 
-// Etapa 2: Configuração do Plano (Botão "Hoje" corrigido)
+// --- MUDANÇA: Etapa 2 agora é igual ao Modal ---
 const Step2_StudyType: React.FC<{
   formData: any; 
   setFormData: React.Dispatch<React.SetStateAction<any>>;
@@ -343,15 +325,21 @@ const Step2_StudyType: React.FC<{
     setFormData({ ...formData, daysOfWeek: newDays });
   };
 
-  const handleModeSelect = (mode: StudySettings['mode'], minutes: number) => {
-    setFormData({ ...formData, studyMode: mode, minutesPerDay: minutes });
+  // Lógica atualizada para o modo personalizado
+  const handleModeSelect = (mode: StudySettings['mode'], minutes?: number) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      studyMode: mode,
+      minutesPerDay: minutes ? minutes : 
+                     (mode === 'personalizado' ? (prev.studyMode === 'personalizado' ? prev.minutesPerDay : 120) : prev.minutesPerDay)
+    }));
   };
 
   const handleCalendarChange = (value: CalendarValue) => {
     const date = Array.isArray(value) ? value[0] : value;
     if (date) {
       setFormData({ ...formData, startDate: date });
-      setShowCalendar(false); // Fecha o calendário ao selecionar
+      setShowCalendar(false); // Fecha o calendário
     }
   };
 
@@ -371,12 +359,30 @@ const Step2_StudyType: React.FC<{
       {/* Ritmo */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Qual é o seu ritmo?</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <ModeCard icon={Feather} title="Suave" description="~30 min/dia" onClick={() => handleModeSelect('suave', 30)} isSelected={formData.studyMode === 'suave'} />
           <ModeCard icon={Brain} title="Regular" description="~1h/dia" onClick={() => handleModeSelect('regular', 60)} isSelected={formData.studyMode === 'regular'} />
           <ModeCard icon={Rocket} title="Intensivo" description="~1h 30min/dia" onClick={() => handleModeSelect('intensivo', 90)} isSelected={formData.studyMode === 'intensivo'} />
+          <ModeCard icon={SlidersHorizontal} title="Personalizado" description="Você escolhe" onClick={() => handleModeSelect('personalizado')} isSelected={formData.studyMode === 'personalizado'} />
         </div>
       </div>
+      
+      {/* Slider do Personalizado */}
+      {formData.studyMode === 'personalizado' && (
+        <div className="pt-4 space-y-2">
+            <label htmlFor="custom-minutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Tempo de estudo diário: <span className="font-bold text-primary-500">{formData.minutesPerDay} minutos</span>
+            </label>
+            <input
+            id="custom-minutes"
+            type="range"
+            min="30" max="240" step="15"
+            value={formData.minutesPerDay}
+            onChange={(e) => setFormData({...formData, minutesPerDay: Number(e.target.value)})}
+            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-thumb:bg-primary-600"
+            />
+        </div>
+      )}
 
       {/* Dias da Semana */}
       <div>
@@ -388,7 +394,7 @@ const Step2_StudyType: React.FC<{
         </div>
       </div>
       
-      {/* Data de Início (com o ícone que você pediu) */}
+      {/* Data de Início */}
       <div className="relative">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quando quer começar?</label>
         <button
@@ -439,7 +445,7 @@ const Step2_StudyType: React.FC<{
   );
 };
 
-// Etapa 3: Avatar (Sem alteração)
+// Etapa 3: Avatar (sem alteração)
 const Step3_Avatar: React.FC<{
   formData: any; 
   setFormData: React.Dispatch<React.SetStateAction<any>>;
@@ -447,7 +453,6 @@ const Step3_Avatar: React.FC<{
   onSubmit: () => void;
   isSaving: boolean;
 }> = ({ formData, setFormData, onBack, onSubmit, isSaving }) => {
-  
   const sortedAvatars = useMemo(() => {
     const { masculino, feminino, outros } = AVATAR_LIST;
     const gender = formData.gender;
@@ -455,50 +460,35 @@ const Step3_Avatar: React.FC<{
     if (gender === 'feminino') return [...feminino, ...outros, ...masculino];
     return [...outros, ...masculino, ...feminino];
   }, [formData.gender]);
-
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-center text-gray-700 dark:text-gray-300">Escolha seu Avatar</h2>
-      
       <div className="flex flex-wrap gap-3 justify-center max-h-[300px] overflow-y-auto p-2 bg-gray-100 dark:bg-gray-900 rounded-lg">
         {sortedAvatars.map(path => (
           <button
-            type="button"
-            key={path}
+            type="button" key={path}
             onClick={() => setFormData({ ...formData, avatarPath: path })}
             className={`rounded-full transition-all duration-200 ${formData.avatarPath === path ? 'ring-4 ring-primary-500 scale-105' : 'hover:scale-110'}`}
           >
             <Image
-              src={path}
-              alt="Avatar"
-              width={64}
-              height={64}
+              src={path} alt="Avatar" width={64} height={64}
               className="w-16 h-16 rounded-full object-cover"
             />
           </button>
         ))}
       </div>
-      
       <div className="flex gap-4">
         <button
-          type="button"
-          onClick={onBack}
-          disabled={isSaving}
+          type="button" onClick={onBack} disabled={isSaving}
           className="w-1/2 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 font-semibold"
         >
           Voltar
         </button>
         <button
-          type="button"
-          onClick={onSubmit}
-          disabled={isSaving} 
+          type="button" onClick={onSubmit} disabled={isSaving} 
           className="w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2"
         >
-          {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Check className="w-5 h-5" />
-          )}
+          {isSaving ? ( <Loader2 className="w-5 h-5 animate-spin" /> ) : ( <Check className="w-5 h-5" /> )}
           {isSaving ? 'Salvando...' : 'Salvar e Começar'}
         </button>
       </div>

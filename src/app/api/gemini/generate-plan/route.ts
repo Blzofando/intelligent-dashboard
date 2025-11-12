@@ -1,126 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI, GenerationConfig, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { courseData } from '@/data/courseData'; 
 import lessonDurationsJSON from '@/data/lessonDurations.json';
-import { StudySettings, StudyPlanDay } from '@/types'; 
+import { StudySettings, StudyPlanDay, Lesson } from '@/types'; 
 
 const lessonDurations: Record<string, number> = lessonDurationsJSON;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-
-const generationConfig: GenerationConfig = {
-    responseMimeType: "application/json",
+// 1. 'personalizado' REMOVIDO daqui
+const RHYTHM_TARGETS_SECONDS = {
+  suave: 30 * 60,     // 1800
+  regular: 60 * 60,   // 3600
+  intensivo: 90 * 60, // 5400
 };
-const safetySettings = [
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-];
 
+// --- Funções Helper (Calculadora Rápida) ---
 function formatDate(date: Date): string {
     return date.toISOString().split('T')[0];
 }
-
 type DayKey = 'dom' | 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab';
 const allDaysMap: Record<DayKey, number> = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6 };
 
-// Tipos de resposta da IA
-type PartialLessonFromAI = { id: string; title: string; };
-type PlanFromIA = { 
-  plan: { 
-    date: string; 
-    lessons: PartialLessonFromAI[];
-  }[], 
-  expectedCompletionDate: string 
-};
+function createMasterPlan(
+  completedLessons: Set<string>, 
+  targetDuration: number
+): StudyPlanDay[] {
+  const masterPlan: StudyPlanDay[] = [];
+  let currentDayLessons: { id: string; title: string; duration: number }[] = [];
+  let currentDayDuration = 0;
+  for (const module of courseData.modules) {
+    for (const lesson of module.lessons) {
+      if (completedLessons.has(lesson.id)) {
+        continue;
+      }
+      const duration = lessonDurations[lesson.id] || 300; 
+      currentDayLessons.push({ ...lesson, duration });
+      currentDayDuration += duration;
+      if (currentDayDuration >= targetDuration) {
+        masterPlan.push({ date: "TBD", lessons: currentDayLessons });
+        currentDayLessons = [];
+        currentDayDuration = 0;
+      }
+    }
+  }
+  if (currentDayLessons.length > 0) {
+    masterPlan.push({ date: "TBD", lessons: currentDayLessons });
+  }
+  return masterPlan;
+}
+function applyUserSchedule(
+  masterPlan: StudyPlanDay[], 
+  settings: StudySettings
+): StudyPlanDay[] {
+  const finalPlan: StudyPlanDay[] = [];
+  const allowedDays = new Set(settings.daysOfWeek.map(d => allDaysMap[d]));
+  let currentDate = new Date(settings.startDate + 'T12:00:00Z'); 
+  for (const masterDay of masterPlan) {
+    while (!allowedDays.has(currentDate.getUTCDay())) {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+    finalPlan.push({
+      date: formatDate(currentDate),
+      lessons: masterDay.lessons
+    });
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  }
+  return finalPlan;
+}
+// --- Fim das Funções Helper ---
 
 export async function POST(request: NextRequest) {
     try {
-        const { settings, completedLessons } = await request.json() as { settings: StudySettings, completedLessons: string[] };
+        const { settings, completedLessons } = await request.json() as { 
+          settings: StudySettings, 
+          completedLessons: string[] 
+        };
 
-        // --- MUDANÇA: Criar a lista de aulas com duração ---
-        const allPendingLessons: { id: string, title: string, duration: number }[] = []; 
-
-        for (const module of courseData.modules) {
-            for (const lesson of module.lessons) {
-                if (!completedLessons.includes(lesson.id)) {
-                    allPendingLessons.push({ 
-                        id: lesson.id, 
-                        title: lesson.title,
-                        // Adiciona a duração em SEGUNDOS, como você pediu
-                        duration: lessonDurations[lesson.id] || 300 
-                    });
-                }
-            }
-        }
+        const completedLessonSet = new Set(completedLessons);
         
-        if (allPendingLessons.length === 0) {
-            return NextResponse.json({ plan: [], expectedCompletionDate: formatDate(new Date()) });
-        }
-        
-        const today = formatDate(new Date()); 
-        const allowedDaysNum = new Set(settings.daysOfWeek.map(d => allDaysMap[d]));
-        const forbiddenDaysStr = (Object.keys(allDaysMap) as DayKey[])
-            .filter(day => !allowedDaysNum.has(allDaysMap[day]))
-            .join(', ') || "Nenhum";
+        // --- 2. A CORREÇÃO ESTÁ AQUI ---
+        // Se for 'personalizado', usa o 'minutesPerDay'. 
+        // Se não, busca no RHYTHM_TARGETS (ou 60 min como padrão).
+        const targetDurationInSeconds = settings.mode === 'personalizado'
+          ? (settings.minutesPerDay || 60) * 60
+          : (RHYTHM_TARGETS_SECONDS[settings.mode] || 3600);
+        // --- FIM DA CORREÇÃO ---
 
-        // --- MUDANÇA: O Prompt conciso que você pediu ---
-        const prompt = `
-          Você é um planejador de estudos especialista. Sua tarefa é criar um plano de estudos detalhado para um aluno de Power BI, dia a dia.
-          Responda APENAS com um objeto JSON no formato especificado.
-          O JSON deve conter **todo** o plano, não apenas uma parte.
+        const masterPlan = createMasterPlan(completedLessonSet, targetDurationInSeconds);
+        const finalPlan = applyUserSchedule(masterPlan, settings);
 
-          **Formato da Resposta (JSON Obrigatório):**
-          {
-            "plan": [
-              {
-                "date": "YYYY-MM-DD", 
-                "lessons": [
-                  { "id": "F003", "title": "01. O que é BI" },
-                  { "id": "F004", "title": "02. Notebook ideal" }
-                ]
-              }
-            ],
-            "expectedCompletionDate": "YYYY-MM-DD" // A data da última aula do plano
-          }
-        
-          Regras:
-          1.  **Meta Diária:** ${settings.minutesPerDay} minutos. Agrupe aulas (usando a 'duration' fornecida) até atingir *aproximadamente* este tempo (${settings.minutesPerDay * 60} segundos). Pode variar um pouco.
-          2.  **Dias de Estudo:** Agende aulas APENAS nos dias: ${settings.daysOfWeek.join(', ')}.
-          3.  **Dias de Folga:** NÃO agende aulas nos dias: ${forbiddenDaysStr}.
-          4.  **Data de Início:** Comece em ${settings.startDate}.
-          5.  **Ordem:** Mantenha a ordem cronológica da lista de aulas pendentes.
+        const expectedCompletionDate = finalPlan.length > 0 
+          ? finalPlan[finalPlan.length - 1].date 
+          : formatDate(new Date());
 
-          Lista de Aulas Pendentes (id, title, duration_in_seconds):
-          ${JSON.stringify(allPendingLessons)} 
-          
-          Crie o plano.
-        `;
-        // --- FIM DA MUDANÇA ---
-        
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-pro", // Usando o modelo que você confirmou
-            generationConfig, 
-            safetySettings 
-        });
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-        
-        const planData = JSON.parse(responseText) as PlanFromIA;
-        
-        // Adiciona durações ao plano (a IA só retorna id/title)
-        const planWithDurations: StudyPlanDay[] = planData.plan.map((day) => ({
-            ...day,
-            lessons: day.lessons.map((lesson) => ({
-                ...lesson,
-                duration: lessonDurations[lesson.id] || 300
-            }))
-        }));
+        const responseData = {
+          plan: finalPlan,
+          expectedCompletionDate: expectedCompletionDate
+        };
 
-        const finalData = { ...planData, plan: planWithDurations };
+        return NextResponse.json(responseData);
 
-        return NextResponse.json(finalData);
-
-    } catch (error) {
-        console.error("Erro na API generate-plan (Gemini):", error);
+    } catch (error: any) {
+        console.error("Erro na API generate-plan (Cálculo Rápido):", error);
         return NextResponse.json({ error: 'Erro ao gerar o plano de estudos' }, { status: 500 });
     }
 }
