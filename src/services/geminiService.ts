@@ -185,3 +185,14 @@ export const getRecommendations = async (completedModules: string[]): Promise<st
   }
 };
 
+export async function generatePbixChallenge(moduleTitle: string, lessonTitles: string[]) {
+  const response = await fetch("/api/gemini/pbix-challenge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ moduleTitle, lessonTitles }),
+  });
+
+  if (!response.ok) throw new Error("Erro ao chamar /pbix-challenge");
+
+  return await response.json();
+}
