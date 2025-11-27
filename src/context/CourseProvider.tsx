@@ -1,15 +1,14 @@
-// src/context/CourseProvider.tsx
 "use client";
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/useProfileStore';
-import { courseData } from '@/data/courseData'; // Importa o curso estático
-import { Course, UserProfile } from '@/types'; // Importa UserProfile
+import { getCourseBySlug } from '@/data/courses';
+import { Course } from '@/types';
+import { useParams } from 'next/navigation';
 
-// O "molde" do nosso contexto
 interface CourseContextType {
-  course: Course;
+  course: Course | null;
   completedLessons: Set<string>;
   notes: Record<string, string>;
   isLoadingProgress: boolean;
@@ -22,23 +21,31 @@ const CourseContext = createContext<CourseContextType | null>(null);
 
 export const CourseProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuthStore();
-  const { 
-    profile, 
-    isLoadingProfile, // Corrigido: o nome certo é isLoadingProfile
+  const params = useParams();
+  const courseSlug = params?.courseId as string | undefined;
+
+  const course = useMemo(() => {
+    if (courseSlug) {
+      return getCourseBySlug(courseSlug) || null;
+    }
+    return null;
+  }, [courseSlug]);
+
+  const {
+    profile,
+    isLoadingProfile,
     toggleLessonCompleted: storeToggle,
     updateNote: storeUpdate,
     resetProgress: storeReset
   } = useProfileStore();
 
-  // Corrigido: Acessa os campos de progresso *de dentro* do objeto 'profile'
-  const completedLessons = new Set(profile?.completedLessons || []);
+  const completedLessons = useMemo(() => new Set(profile?.completedLessons || []), [profile?.completedLessons]);
   const notes = profile?.lessonNotes || {};
 
-  // Funções "wrapper" que já incluem o UID do usuário
   const toggleLessonCompleted = (lessonId: string) => {
     if (user) storeToggle(user.uid, lessonId);
   };
-  
+
   const updateNote = (itemId: string, text: string) => {
     if (user) storeUpdate(user.uid, itemId, text);
   };
@@ -47,12 +54,11 @@ export const CourseProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) storeReset(user.uid);
   };
 
-  // Monta o valor do contexto
   const value = {
-    course: courseData,
+    course,
     completedLessons,
     notes,
-    isLoadingProgress: isLoadingProfile, // O "loading" do progresso é o loading do perfil
+    isLoadingProgress: isLoadingProfile,
     toggleLessonCompleted,
     updateNote,
     resetProgress
@@ -65,7 +71,6 @@ export const CourseProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Este hook não muda
 export const useCourseContext = () => {
   const context = useContext(CourseContext);
   if (!context) {
