@@ -9,10 +9,11 @@ import { StudyPlannerModal } from '@/components/StudyPlannerModal';
 import { StudyPlanDay, StudyPlan, StudySettings, UserProfile } from '@/types';
 import { BookOpen, CheckCircle, Target, Trophy, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { courses } from '@/data/courses';
 
 // Tipagem
 import type { CalendarProps } from 'react-calendar';
-type Value = CalendarProps['value']; 
+type Value = CalendarProps['value'];
 
 // Funções de Data
 function formatDate(date: Date): string {
@@ -27,28 +28,25 @@ function formatDisplayDate(dateString: string): string {
 const PlannerPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  
+
   const { user } = useAuthStore();
-  const { 
+  const {
     profile, // <-- Perfil completo
-    isLoadingProfile, 
+    isLoadingProfile,
     updateStudyPlan,
-    isGeneratingPlan, 
+    isGeneratingPlan,
     setGeneratingPlan,
   } = useProfileStore();
-  
-  // --- 1. CORREÇÃO: Acessar 'completedLessons' de dentro do 'profile' ---
+
   const completedLessons = useMemo(() => new Set(profile?.completedLessons || []), [profile]);
-  // --- FIM DA CORREÇÃO ---
-  
+
   const plan = profile?.studyPlan;
   const settings = profile?.studySettings;
 
   // Handler de Reorganização
   const handleReorganizePlan = useCallback(async (profileArg: UserProfile, settingsArg: StudySettings) => {
-    // ... (sem alteração) ...
     if (!user || !updateStudyPlan) return;
-    setGeneratingPlan(true); 
+    setGeneratingPlan(true);
     try {
       const response = await fetch('/api/gemini/reorganize-plan', {
         method: 'POST',
@@ -61,12 +59,11 @@ const PlannerPage: React.FC = () => {
     } catch (error) {
       console.error(error);
     }
-    setGeneratingPlan(false); 
+    setGeneratingPlan(false);
   }, [user, updateStudyPlan, setGeneratingPlan]);
 
   // useEffect principal (mostra modal ou popup)
   useEffect(() => {
-    // ... (sem alteração) ...
     if (isLoadingProfile) return;
     if (!plan && !isModalOpen && !isGeneratingPlan) {
       setIsModalOpen(true);
@@ -75,7 +72,6 @@ const PlannerPage: React.FC = () => {
 
   // handler do calendário
   const handleCalendarChange = (value: Value) => {
-    // ... (sem alteração) ...
     const maybe = Array.isArray(value) ? value[0] : value;
     if (!maybe) return;
     const newDate = (typeof maybe === 'string') ? new Date(maybe) : maybe;
@@ -84,7 +80,6 @@ const PlannerPage: React.FC = () => {
 
   // lessonsForSelectedDay
   const lessonsForSelectedDay: StudyPlanDay | undefined = useMemo(() => {
-    // ... (sem alteração) ...
     if (!plan) return undefined;
     const dateString = formatDate(selectedDate);
     return plan.plan.find(day => day.date === dateString);
@@ -92,7 +87,6 @@ const PlannerPage: React.FC = () => {
 
   // lessonsTodayCount
   const lessonsTodayCount = useMemo(() => {
-    // ... (sem alteração) ...
     if (!plan) return 0;
     const dateString = formatDate(new Date());
     return plan.plan.find(day => day.date === dateString)?.lessons.length || 0;
@@ -106,33 +100,64 @@ const PlannerPage: React.FC = () => {
           Aulas de {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </h1>
         {lessonsForSelectedDay ? (
-          <ul className="mt-4 space-y-2">
-            
-            {/* --- 2. CORREÇÃO: Usar o 'completedLessons' (Set) --- */}
-            {lessonsForSelectedDay.lessons.map(lesson => {
-              const isCompleted = completedLessons.has(lesson.id); // Verifica no Set
-              
-              return (
-                <li key={lesson.id} className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${isCompleted ? 'opacity-50' : ''}`}>
-                  <Link 
-                    href={`/lesson/${lesson.id}`} 
-                    className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 ${isCompleted ? 'line-through' : ''}`}
-                  >
-                    {lesson.title}
-                  </Link>
-                  <span className={`text-sm text-gray-500 dark:text-gray-400 ${isCompleted ? 'line-through' : ''}`}>
-                    {Math.round(lesson.duration / 60)} min
-                  </span>
-                </li>
-              );
-            })}
-            {/* --- FIM DA CORREÇÃO --- */}
+          <div className="mt-4">
+            {(() => {
+              // Agrupa as aulas por curso
+              const lessonsByCourse: Record<string, typeof lessonsForSelectedDay.lessons> = {};
+              lessonsForSelectedDay.lessons.forEach(lesson => {
+                // Tenta pegar o courseId da aula, ou infere pelo prefixo se não tiver
+                let cId = lesson.courseId;
+                if (!cId) {
+                  if (lesson.id.startsWith('pbi-')) cId = 'power-bi';
+                  else if (lesson.id.startsWith('lic-')) cId = 'lic'; // Updated to 'lic'
+                  else cId = 'unknown';
+                }
+                if (!lessonsByCourse[cId]) lessonsByCourse[cId] = [];
+                lessonsByCourse[cId].push(lesson);
+              });
 
-          </ul>
+              return Object.entries(lessonsByCourse).map(([courseId, lessons]) => {
+                let course = courses.find(c => c.id === courseId);
+
+                // Fallback para encontrar o curso se o ID mudou (ex: lic-course -> lic)
+                if (!course && courseId === 'lic-course') {
+                  course = courses.find(c => c.slug === 'lic');
+                }
+
+                const courseTitle = course?.title || "Curso";
+                // Usa o slug se disponível, senão o ID (que pode ser o antigo ou inferido)
+                const courseUrlPart = course?.slug || courseId;
+
+                return (
+                  <div key={courseId} className="mb-6 border-l-4 border-primary-500 pl-4">
+                    <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 mb-3">{courseTitle}</h3>
+                    <ul className="space-y-2">
+                      {lessons.map(lesson => {
+                        const isCompleted = completedLessons.has(lesson.id);
+                        return (
+                          <li key={lesson.id} className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${isCompleted ? 'opacity-50' : ''}`}>
+                            <Link
+                              href={`/courses/${courseUrlPart}/lesson/${lesson.id}`}
+                              className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 ${isCompleted ? 'line-through' : ''}`}
+                            >
+                              {lesson.title}
+                            </Link>
+                            <span className={`text-sm text-gray-500 dark:text-gray-400 ${isCompleted ? 'line-through' : ''}`}>
+                              {Math.round(lesson.duration / 60)} min
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         ) : (
           <p className="mt-4 text-gray-500 dark:text-gray-400">
-            {isGeneratingPlan ? "Seu plano está sendo criado pela IA..." : 
-             (plan ? "Nenhuma aula planejada para este dia." : "Gere seu plano de estudos para começar.")
+            {isGeneratingPlan ? "Seu plano está sendo criado pela IA..." :
+              (plan ? "Nenhuma aula planejada para este dia." : "Gere seu plano de estudos para começar.")
             }
           </p>
         )}
@@ -183,7 +208,7 @@ const PlannerPage: React.FC = () => {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            disabled={isGeneratingPlan} 
+            disabled={isGeneratingPlan}
             className="w-full px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 transition-all disabled:bg-gray-500"
           >
             {isGeneratingPlan ? "Gerando plano..." : (plan ? "Gerar Novo Plano de Estudos" : "Planejar Meus Estudos")}

@@ -5,11 +5,13 @@ export interface StudySettings {
   daysOfWeek: ('seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom')[];
   focusArea: string;
   startDate: string;
+  selectedCourses?: string[];
+  courseDistribution?: Record<string, number>;
 }
 
 export interface StudyPlanDay {
   date: string; // Salva como string "YYYY-MM-DD"
-  lessons: { id: string; title: string; duration: number }[];
+  lessons: { id: string; title: string; duration: number; courseId?: string }[];
 }
 
 export interface StudyPlan {

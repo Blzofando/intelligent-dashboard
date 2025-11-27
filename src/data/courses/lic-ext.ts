@@ -1,7 +1,7 @@
 import { Course } from '../../types';
 
 export const courseData: Course = {
-    id: "lic-course",
+    id: "lic",
     slug: "lic",
     title: "Licitante Extremo",
     description: "Descrição automática gerada pelo script.",
