@@ -13,7 +13,7 @@ export default function AllCoursesPage() {
   const { profile } = useProfileStore();
   const [typedText, setTypedText] = useState('');
   const fullText = profile?.displayName
-    ? ` Olá, ${profile.displayName.split(' ')[0]}... Pronto para evoluir?`
+    ? ` -Olá, ${profile.displayName.split(' ')[0]}... Pronto para evoluir?`
     : "Bem-vindo ao futuro do aprendizado...";
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function AllCoursesPage() {
             <span>Painel Inteligente</span>
           </motion.div>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 min-h-14 md:min-h-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 min-h-14 md:min-h-16 px-1">
             <span className="bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400">
               {typedText}
             </span>

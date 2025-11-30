@@ -114,7 +114,7 @@ const ModuleDetail: React.FC = () => {
     <div className="space-y-8">
       {/* Bloco de Links e Título */}
       <Link href={`/courses/${courseId}/modules`} className="text-primary-500 hover:underline">&larr; Voltar para os Módulos</Link>
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{module.title}</h1>
+      <h1 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">{module.title}</h1>
 
       {/* Bloco de Aulas */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">

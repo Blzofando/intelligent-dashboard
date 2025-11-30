@@ -70,10 +70,19 @@ export default function DashboardLayout({
       <CourseProvider>
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden">
 
-          {/* Sidebar */}
-          <aside className={`absolute inset-y-0 left-0 z-30 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex md:flex-col glass-panel dark:glass-panel-dark m-4 rounded-2xl`}>
+          {/* Mobile Overlay - Escurece e desfoca o fundo quando o sidebar está aberto */}
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden transition-all duration-300"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-hidden="true"
+            />
+          )}
 
-            <div className="flex flex-col flex-1 h-0">
+          {/* Sidebar */}
+          <aside className={`fixed inset-y-0 left-0 z-30 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex md:flex-col glass-panel dark:glass-panel-dark m-4 rounded-2xl shadow-2xl md:shadow-none`}>
+
+            <div className="flex flex-col flex-1 overflow-hidden">
 
               {/* Logo Header */}
               <div className="flex items-center justify-center h-24 border-b border-gray-200/20 dark:border-gray-700/30">

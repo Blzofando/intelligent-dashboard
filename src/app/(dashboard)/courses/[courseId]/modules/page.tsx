@@ -25,7 +25,7 @@ export default function ModulesPage() {
           <BookOpen className="w-8 h-8 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+          <h1 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
             Módulos do Curso
             <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
           </h1>

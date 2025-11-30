@@ -140,7 +140,7 @@ body {
 }
 
 .dark body {
-  @apply bg-[#0f172a] text-gray-100;
+  @apply bg-dark-bg text-gray-100;
   /* Fundo super dark */
 }
 
