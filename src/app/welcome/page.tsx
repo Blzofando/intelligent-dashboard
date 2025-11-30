@@ -9,8 +9,8 @@ import { AVATAR_LIST } from '@/data/avatars';
 import { UserProfile, StudySettings, StudyPlan, YouTubeVideo } from '@/types';
 import { Loader2, Rocket, Brain, Feather, CalendarDays, User, Smile, Check, SlidersHorizontal } from 'lucide-react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css'; 
-import { courseData } from '@/data/courseData'; 
+import 'react-calendar/dist/Calendar.css';
+import { courseData } from '@/data/courseData';
 
 // --- Tipos e Funções Auxiliares ---
 type DayOfWeek = 'dom' | 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab';
@@ -23,26 +23,26 @@ function formatDate(date: Date): string {
 const isToday = (date: Date) => {
   const today = new Date();
   return date.getDate() === today.getDate() &&
-         date.getMonth() === today.getMonth() &&
-         date.getFullYear() === today.getFullYear();
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
 };
 
 // --- COMPONENTE PRINCIPAL (PÁGINA) ---
 const WelcomePage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { 
-    profile, 
-    updateProfile, 
-    isLoadingProfile, 
-    setGeneratingPlan, 
-    updateStudyPlan,   
+  const {
+    profile,
+    updateProfile,
+    isLoadingProfile,
+    setGeneratingPlan,
+    updateStudyPlan,
     updateVideoRecs,
     setShowPlanReadyToast
-  } = useProfileStore(); 
-  
+  } = useProfileStore();
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false); 
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -71,9 +71,9 @@ const WelcomePage: React.FC = () => {
 
   const handleFinalSubmit = async () => {
     if (!user || !profile) return;
-    
+
     setIsSaving(true);
-    setGeneratingPlan(true); 
+    setGeneratingPlan(true);
 
     const finalProfileData: Partial<UserProfile> = {
       displayName: formData.displayName.trim() || "Novo Aluno",
@@ -82,7 +82,7 @@ const WelcomePage: React.FC = () => {
       focusArea: formData.focusArea.trim() || "Sem foco definido",
       avatarPath: formData.avatarPath,
     };
-    
+
     const finalSettings: StudySettings = {
       mode: formData.studyMode,
       minutesPerDay: formData.minutesPerDay,
@@ -90,8 +90,8 @@ const WelcomePage: React.FC = () => {
       focusArea: finalProfileData.focusArea!,
       startDate: formatDate(formData.startDate),
     };
-    
-    await updateProfile(user.uid, { ...finalProfileData, studySettings: finalSettings });
+
+    await updateProfile(user.uid, { ...finalProfileData });
 
     router.push('/');
 
@@ -99,26 +99,26 @@ const WelcomePage: React.FC = () => {
   };
 
   const generateBackgroundTasks = async (
-    uid: string, 
-    settings: StudySettings, 
+    uid: string,
+    settings: StudySettings,
     completedLessons: string[]
   ) => {
     try {
       // Gerar o Plano de Estudo
-      const planResponse = await fetch('/api/gemini/generate-plan', { 
+      const planResponse = await fetch('/api/gemini/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings, completedLessons }),
       });
-      
+
       if (!planResponse.ok) throw new Error("Falha ao gerar o plano.");
-      
+
       const newPlan: StudyPlan = await planResponse.json();
-      await updateStudyPlan(uid, settings, newPlan); 
+      await updateStudyPlan(uid, 'power-bi', settings, newPlan);
 
       // Gerar as Recomendações de Vídeo
       const firstModule = courseData.modules[0];
-      const firstLesson = firstModule.lessons[0]; 
+      const firstLesson = firstModule.lessons[0];
 
       const recsResponse = await fetch('/api/gemini/youtube-recs', {
         method: 'POST',
@@ -132,7 +132,7 @@ const WelcomePage: React.FC = () => {
 
       if (recsResponse.ok) {
         const videos: YouTubeVideo[] = await recsResponse.json();
-        await updateVideoRecs(uid, videos); 
+        await updateVideoRecs(uid, videos);
       }
 
     } catch (error) {
@@ -143,7 +143,7 @@ const WelcomePage: React.FC = () => {
     }
   };
 
-  if (isLoadingProfile || !profile) { 
+  if (isLoadingProfile || !profile) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-primary-500" />
@@ -163,40 +163,40 @@ const WelcomePage: React.FC = () => {
       <WelcomeStepper currentStep={currentStep} />
 
       <div className="overflow-hidden mt-8">
-        <div 
+        <div
           className="flex transition-transform duration-500 ease-in-out"
-          style={{ 
-            width: '300%', 
-            transform: `translateX(-${(currentStep - 1) * (100 / 3)}%)` 
+          style={{
+            width: '300%',
+            transform: `translateX(-${(currentStep - 1) * (100 / 3)}%)`
           }}
         >
           {/* Etapa 1: Informações */}
           <div className="w-1/3 px-2">
-            <Step1_UserInfo 
-              formData={formData} 
-              setFormData={setFormData} 
-              onNext={() => setCurrentStep(2)} 
+            <Step1_UserInfo
+              formData={formData}
+              setFormData={setFormData}
+              onNext={() => setCurrentStep(2)}
             />
           </div>
 
           {/* Etapa 2: Tipo de Estudo */}
           <div className="w-1/3 px-2">
-            <Step2_StudyType 
-              formData={formData} 
-              setFormData={setFormData} 
-              onBack={() => setCurrentStep(1)} 
-              onNext={() => setCurrentStep(3)} 
+            <Step2_StudyType
+              formData={formData}
+              setFormData={setFormData}
+              onBack={() => setCurrentStep(1)}
+              onNext={() => setCurrentStep(3)}
             />
           </div>
 
           {/* Etapa 3: Avatar */}
           <div className="w-1/3 px-2">
-            <Step3_Avatar 
-              formData={formData} 
+            <Step3_Avatar
+              formData={formData}
               setFormData={setFormData}
-              onBack={() => setCurrentStep(2)} 
-              onSubmit={handleFinalSubmit} 
-              isSaving={isSaving} 
+              onBack={() => setCurrentStep(2)}
+              onSubmit={handleFinalSubmit}
+              isSaving={isSaving}
             />
           </div>
         </div>
@@ -217,26 +217,26 @@ const WelcomeStepper: React.FC<{ currentStep: number }> = ({ currentStep }) => (
     <StepCircle icon={Smile} step={3} currentStep={currentStep} title="Avatar" />
   </div>
 );
-const StepCircle: React.FC<{ icon: React.ElementType, step: number, currentStep: number, title: string }> = 
+const StepCircle: React.FC<{ icon: React.ElementType, step: number, currentStep: number, title: string }> =
   ({ icon: Icon, step, currentStep, title }) => (
-  <div className="flex flex-col items-center">
-    <div 
-      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
+    <div className="flex flex-col items-center">
+      <div
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
         ${step === currentStep ? 'bg-primary-600 text-white scale-110' : ''}
         ${step < currentStep ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}
       `}
-    >
-      {step < currentStep ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+      >
+        {step < currentStep ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+      </div>
+      <span className={`mt-2 text-xs font-medium ${step === currentStep ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'}`}>
+        {title}
+      </span>
     </div>
-    <span className={`mt-2 text-xs font-medium ${step === currentStep ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'}`}>
-      {title}
-    </span>
-  </div>
-);
+  );
 
 // Etapa 1: Informações (Estilo atualizado)
 const Step1_UserInfo: React.FC<{
-  formData: any; 
+  formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   onNext: () => void;
 }> = ({ formData, setFormData, onNext }) => {
@@ -310,12 +310,12 @@ const Step1_UserInfo: React.FC<{
 
 // --- MUDANÇA: Etapa 2 agora é igual ao Modal ---
 const Step2_StudyType: React.FC<{
-  formData: any; 
+  formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   onBack: () => void;
   onNext: () => void;
 }> = ({ formData, setFormData, onBack, onNext }) => {
-  
+
   const [showCalendar, setShowCalendar] = useState(false);
 
   const handleDayToggle = (day: DayOfWeek) => {
@@ -330,8 +330,8 @@ const Step2_StudyType: React.FC<{
     setFormData((prev: any) => ({
       ...prev,
       studyMode: mode,
-      minutesPerDay: minutes ? minutes : 
-                     (mode === 'personalizado' ? (prev.studyMode === 'personalizado' ? prev.minutesPerDay : 120) : prev.minutesPerDay)
+      minutesPerDay: minutes ? minutes :
+        (mode === 'personalizado' ? (prev.studyMode === 'personalizado' ? prev.minutesPerDay : 120) : prev.minutesPerDay)
     }));
   };
 
@@ -355,7 +355,7 @@ const Step2_StudyType: React.FC<{
   return (
     <form onSubmit={handleNext} className="space-y-4">
       <h2 className="text-xl font-semibold text-center text-gray-700 dark:text-gray-300 mb-6">Seu Plano de Estudo</h2>
-      
+
       {/* Ritmo */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Qual é o seu ritmo?</label>
@@ -366,21 +366,21 @@ const Step2_StudyType: React.FC<{
           <ModeCard icon={SlidersHorizontal} title="Personalizado" description="Você escolhe" onClick={() => handleModeSelect('personalizado')} isSelected={formData.studyMode === 'personalizado'} />
         </div>
       </div>
-      
+
       {/* Slider do Personalizado */}
       {formData.studyMode === 'personalizado' && (
         <div className="pt-4 space-y-2">
-            <label htmlFor="custom-minutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tempo de estudo diário: <span className="font-bold text-primary-500">{formData.minutesPerDay} minutos</span>
-            </label>
-            <input
+          <label htmlFor="custom-minutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Tempo de estudo diário: <span className="font-bold text-primary-500">{formData.minutesPerDay} minutos</span>
+          </label>
+          <input
             id="custom-minutes"
             type="range"
             min="30" max="240" step="15"
             value={formData.minutesPerDay}
-            onChange={(e) => setFormData({...formData, minutesPerDay: Number(e.target.value)})}
+            onChange={(e) => setFormData({ ...formData, minutesPerDay: Number(e.target.value) })}
             className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-thumb:bg-primary-600"
-            />
+          />
         </div>
       )}
 
@@ -393,7 +393,7 @@ const Step2_StudyType: React.FC<{
           ))}
         </div>
       </div>
-      
+
       {/* Data de Início */}
       <div className="relative">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quando quer começar?</label>
@@ -403,27 +403,27 @@ const Step2_StudyType: React.FC<{
           className="h-12 px-4 w-full flex items-center justify-between rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm text-left"
         >
           <span className="text-gray-800 dark:text-gray-100">
-            {isToday(formData.startDate) 
-              ? "Hoje" 
+            {isToday(formData.startDate)
+              ? "Hoje"
               : formData.startDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
           </span>
           <CalendarDays className="w-5 h-5 text-gray-500" />
         </button>
-        
+
         {showCalendar && (
-          <div className="absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-2"> 
+          <div className="absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-2">
             <Calendar
-              onChange={handleCalendarChange} 
+              onChange={handleCalendarChange}
               value={formData.startDate}
-              className="react-calendar-custom" 
-              minDate={new Date()} 
+              className="react-calendar-custom"
+              minDate={new Date()}
               selectRange={false}
               locale="pt-BR"
             />
           </div>
         )}
       </div>
-      
+
       {/* Botões de Navegação */}
       <div className="flex gap-4 pt-4">
         <button
@@ -447,7 +447,7 @@ const Step2_StudyType: React.FC<{
 
 // Etapa 3: Avatar (sem alteração)
 const Step3_Avatar: React.FC<{
-  formData: any; 
+  formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   onBack: () => void;
   onSubmit: () => void;
@@ -485,10 +485,10 @@ const Step3_Avatar: React.FC<{
           Voltar
         </button>
         <button
-          type="button" onClick={onSubmit} disabled={isSaving} 
+          type="button" onClick={onSubmit} disabled={isSaving}
           className="w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2"
         >
-          {isSaving ? ( <Loader2 className="w-5 h-5 animate-spin" /> ) : ( <Check className="w-5 h-5" /> )}
+          {isSaving ? (<Loader2 className="w-5 h-5 animate-spin" />) : (<Check className="w-5 h-5" />)}
           {isSaving ? 'Salvando...' : 'Salvar e Começar'}
         </button>
       </div>
@@ -498,32 +498,30 @@ const Step3_Avatar: React.FC<{
 
 
 // --- COMPONENTES DE UI PEQUENOS (Usados na Etapa 2) ---
-const ModeCard: React.FC<{icon: React.ElementType, title: string, description: string, onClick: () => void, isSelected?: boolean}> = 
+const ModeCard: React.FC<{ icon: React.ElementType, title: string, description: string, onClick: () => void, isSelected?: boolean }> =
   ({ icon: Icon, title, description, onClick, isSelected = false }) => (
-  <button 
-    type="button"
-    onClick={onClick} 
-    className={`p-4 border-2 rounded-lg text-left transition-all h-full ${
-      isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-    }`}
-  >
-    <Icon className="w-6 h-6 text-primary-500 mb-1" />
-    <h4 className="text-base font-bold dark:text-white">{title}</h4>
-    <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
-  </button>
-);
+    <button
+      type="button"
+      onClick={onClick}
+      className={`p-4 border-2 rounded-lg text-left transition-all h-full ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+        }`}
+    >
+      <Icon className="w-6 h-6 text-primary-500 mb-1" />
+      <h4 className="text-base font-bold dark:text-white">{title}</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+    </button>
+  );
 
-const DayButton: React.FC<{day: string, isSelected: boolean, onClick: () => void}> = 
+const DayButton: React.FC<{ day: string, isSelected: boolean, onClick: () => void }> =
   ({ day, isSelected, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`flex-1 w-10 h-10 rounded-full font-semibold transition-colors text-sm ${
-      isSelected ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:text-white'
-    }`}
-  >
-    {day.toUpperCase()}
-  </button>
-);
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 w-10 h-10 rounded-full font-semibold transition-colors text-sm ${isSelected ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:text-white'
+        }`}
+    >
+      {day.toUpperCase()}
+    </button>
+  );
 
 export default WelcomePage;

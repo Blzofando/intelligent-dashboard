@@ -7,7 +7,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { StudyPlannerModal } from '@/components/StudyPlannerModal';
 import { StudyPlanDay, StudyPlan, StudySettings, UserProfile } from '@/types';
-import { BookOpen, CheckCircle, Target, Trophy, Loader2, AlertTriangle } from 'lucide-react';
+import { BookOpen, CheckCircle, Target, Trophy, Loader2, CalendarDays, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { courses } from '@/data/courses';
 
@@ -40,35 +40,30 @@ const PlannerPage: React.FC = () => {
 
   const completedLessons = useMemo(() => new Set(profile?.completedLessons || []), [profile]);
 
-  const plan = profile?.studyPlan;
-  const settings = profile?.studySettings;
+  // Agrega todos os planos de curso
+  const allPlans = useMemo(() => {
+    if (!profile?.coursePlans) return [];
+    return Object.values(profile.coursePlans);
+  }, [profile]);
 
-  // Handler de Reorganização
+  const hasAnyPlan = allPlans.length > 0;
+
+  // Handler de Reorganização (Simplificado para MVP - idealmente reorganizaria por curso)
+  // Por enquanto, vamos desabilitar a reorganização global automática até ter suporte no backend
+  /*
   const handleReorganizePlan = useCallback(async (profileArg: UserProfile, settingsArg: StudySettings) => {
-    if (!user || !updateStudyPlan) return;
-    setGeneratingPlan(true);
-    try {
-      const response = await fetch('/api/gemini/reorganize-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile: profileArg }),
-      });
-      if (!response.ok) throw new Error("Falha ao reorganizar o plano.");
-      const newPlan: StudyPlan = await response.json();
-      await updateStudyPlan(user.uid, settingsArg, newPlan);
-    } catch (error) {
-      console.error(error);
-    }
-    setGeneratingPlan(false);
+    // ... Lógica de reorganização precisaria ser adaptada para múltiplos planos ...
   }, [user, updateStudyPlan, setGeneratingPlan]);
+  */
 
   // useEffect principal (mostra modal ou popup)
   useEffect(() => {
     if (isLoadingProfile) return;
-    if (!plan && !isModalOpen && !isGeneratingPlan) {
+    // Se não tem NENHUM plano, abre o modal para criar o primeiro
+    if (!hasAnyPlan && !isModalOpen && !isGeneratingPlan) {
       setIsModalOpen(true);
     }
-  }, [profile, isLoadingProfile, plan, isModalOpen, isGeneratingPlan]);
+  }, [profile, isLoadingProfile, hasAnyPlan, isModalOpen, isGeneratingPlan]);
 
   // handler do calendário
   const handleCalendarChange = (value: Value) => {
@@ -78,38 +73,62 @@ const PlannerPage: React.FC = () => {
     setSelectedDate(newDate);
   };
 
-  // lessonsForSelectedDay
-  const lessonsForSelectedDay: StudyPlanDay | undefined = useMemo(() => {
-    if (!plan) return undefined;
+  // lessonsForSelectedDay - Agregado de todos os planos
+  const lessonsForSelectedDay = useMemo(() => {
     const dateString = formatDate(selectedDate);
-    return plan.plan.find(day => day.date === dateString);
-  }, [plan, selectedDate]);
+    const lessons: any[] = [];
 
-  // lessonsTodayCount
+    allPlans.forEach(coursePlan => {
+      const dayPlan = coursePlan.plan.plan.find(day => day.date === dateString);
+      if (dayPlan) {
+        lessons.push(...dayPlan.lessons);
+      }
+    });
+
+    return lessons.length > 0 ? lessons : undefined;
+  }, [allPlans, selectedDate]);
+
+  // lessonsTodayCount - Agregado
   const lessonsTodayCount = useMemo(() => {
-    if (!plan) return 0;
     const dateString = formatDate(new Date());
-    return plan.plan.find(day => day.date === dateString)?.lessons.length || 0;
-  }, [plan]);
+    let count = 0;
+    allPlans.forEach(coursePlan => {
+      const dayPlan = coursePlan.plan.plan.find(day => day.date === dateString);
+      if (dayPlan) count += dayPlan.lessons.length;
+    });
+    return count;
+  }, [allPlans]);
+
+  // Próxima conclusão prevista (a mais próxima entre todos os planos)
+  const nextCompletionDate = useMemo(() => {
+    if (!hasAnyPlan) return "N/D";
+    const dates = allPlans.map(p => p.plan.expectedCompletionDate).sort();
+    return formatDisplayDate(dates[0]);
+  }, [allPlans, hasAnyPlan]);
+
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-[fade-in_0.5s_ease-out]">
       {/* 1. AULAS DO DIA (Topo) */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-          Aulas de {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+      <div className="glass-panel dark:glass-panel-dark p-8 rounded-2xl shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+          <CalendarDays className="w-8 h-8 text-primary-500" />
+          <span>Aulas de <span className="text-primary-600 dark:text-primary-400">{selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span></span>
         </h1>
+
         {lessonsForSelectedDay ? (
-          <div className="mt-4">
+          <div className="mt-6 space-y-6">
             {(() => {
               // Agrupa as aulas por curso
-              const lessonsByCourse: Record<string, typeof lessonsForSelectedDay.lessons> = {};
-              lessonsForSelectedDay.lessons.forEach(lesson => {
+              const lessonsByCourse: Record<string, any[]> = {};
+              lessonsForSelectedDay.forEach(lesson => {
                 // Tenta pegar o courseId da aula, ou infere pelo prefixo se não tiver
                 let cId = lesson.courseId;
                 if (!cId) {
                   if (lesson.id.startsWith('pbi-')) cId = 'power-bi';
-                  else if (lesson.id.startsWith('lic-')) cId = 'lic'; // Updated to 'lic'
+                  else if (lesson.id.startsWith('lic-')) cId = 'lic';
                   else cId = 'unknown';
                 }
                 if (!lessonsByCourse[cId]) lessonsByCourse[cId] = [];
@@ -129,20 +148,24 @@ const PlannerPage: React.FC = () => {
                 const courseUrlPart = course?.slug || courseId;
 
                 return (
-                  <div key={courseId} className="mb-6 border-l-4 border-primary-500 pl-4">
-                    <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 mb-3">{courseTitle}</h3>
+                  <div key={courseId} className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border-l-4 border-primary-500">
+                    <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-primary-500" />
+                      {courseTitle}
+                    </h3>
                     <ul className="space-y-2">
-                      {lessons.map(lesson => {
+                      {lessons.map((lesson: any) => {
                         const isCompleted = completedLessons.has(lesson.id);
                         return (
-                          <li key={lesson.id} className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${isCompleted ? 'opacity-50' : ''}`}>
+                          <li key={lesson.id} className={`flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 rounded-lg transition-all hover:shadow-sm ${isCompleted ? 'opacity-50' : ''}`}>
                             <Link
                               href={`/courses/${courseUrlPart}/lesson/${lesson.id}`}
-                              className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 ${isCompleted ? 'line-through' : ''}`}
+                              className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors ${isCompleted ? 'line-through' : ''}`}
                             >
                               {lesson.title}
                             </Link>
-                            <span className={`text-sm text-gray-500 dark:text-gray-400 ${isCompleted ? 'line-through' : ''}`}>
+                            <span className={`text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 ${isCompleted ? 'line-through' : ''}`}>
+                              <span className="w-2 h-2 rounded-full bg-secondary-400"></span>
                               {Math.round(lesson.duration / 60)} min
                             </span>
                           </li>
@@ -155,11 +178,14 @@ const PlannerPage: React.FC = () => {
             })()}
           </div>
         ) : (
-          <p className="mt-4 text-gray-500 dark:text-gray-400">
-            {isGeneratingPlan ? "Seu plano está sendo criado pela IA..." :
-              (plan ? "Nenhuma aula planejada para este dia." : "Gere seu plano de estudos para começar.")
-            }
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+            <CalendarDays className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+            <p className="text-gray-500 dark:text-gray-400 text-lg">
+              {isGeneratingPlan ? "Seu plano está sendo criado pela IA..." :
+                (hasAnyPlan ? "Nenhuma aula planejada para este dia." : "Gere seu plano de estudos para começar.")
+              }
+            </p>
+          </div>
         )}
       </div>
 
@@ -167,7 +193,7 @@ const PlannerPage: React.FC = () => {
       {isGeneratingPlan && (
         <ReorgNotification
           icon={Loader2}
-          color="text-blue-500"
+          color="text-primary-500"
           message="Aguarde... Nossa IA está criando seu plano de estudos. Isso pode levar uns 5 minutinhos. Você será avisado quando estiver pronto."
           isSpinning
         />
@@ -176,14 +202,17 @@ const PlannerPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 2. CALENDÁRIO (Esquerda) */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <div className="lg:col-span-2 glass-panel dark:glass-panel-dark p-6 rounded-2xl shadow-lg">
           <Calendar
             onChange={handleCalendarChange}
             value={selectedDate}
-            className="react-calendar-custom"
+            className="react-calendar-custom w-full"
             tileClassName={({ date, view }) => {
-              if (view === 'month' && plan) {
-                if (plan.plan.find(d => d.date === formatDate(date))) {
+              if (view === 'month' && hasAnyPlan) {
+                const dateStr = formatDate(date);
+                // Verifica se ALGUM plano tem aula neste dia
+                const hasLesson = allPlans.some(p => p.plan.plan.some(d => d.date === dateStr));
+                if (hasLesson) {
                   return 'has-lessons';
                 }
               }
@@ -196,22 +225,49 @@ const PlannerPage: React.FC = () => {
 
         {/* 3. ESTATÍSTICAS (Direita) */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">Minhas Metas</h3>
-            <div className="space-y-3">
-              <StatCard icon={Target} title="Ritmo de Estudo" value={settings ? settings.mode.charAt(0).toUpperCase() + settings.mode.slice(1) : "N/D"} />
-              <StatCard icon={Trophy} title="Ofensiva (Streak)" value={`${profile?.studyStreak || 0} Dias`} />
-              <StatCard icon={BookOpen} title="Aulas de Hoje" value={`${lessonsTodayCount} Aulas`} />
-              <StatCard icon={CheckCircle} title="Expectativa de Conclusão" value={plan ? formatDisplayDate(plan.expectedCompletionDate) : "N/D"} />
+          <div className="glass-panel dark:glass-panel-dark p-6 rounded-2xl shadow-lg">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2">
+              <Target className="w-6 h-6 text-secondary-500" />
+              Minhas Metas
+            </h3>
+            <div className="space-y-4">
+              {/* Mostra stats agregados ou do primeiro plano como exemplo */}
+              <StatCard icon={Target} title="Planos Ativos" value={`${allPlans.length}`} color="text-blue-500" bg="bg-blue-100 dark:bg-blue-900/30" />
+              <StatCard icon={Trophy} title="Ofensiva (Streak)" value={`${profile?.studyStreak || 0} Dias`} color="text-yellow-500" bg="bg-yellow-100 dark:bg-yellow-900/30" />
+              <StatCard icon={BookOpen} title="Aulas de Hoje" value={`${lessonsTodayCount} Aulas`} color="text-purple-500" bg="bg-purple-100 dark:bg-purple-900/30" />
+              <StatCard icon={CheckCircle} title="Próxima Conclusão" value={nextCompletionDate} color="text-green-500" bg="bg-green-100 dark:bg-green-900/30" />
             </div>
+
+            {/* Lista de Planos Ativos */}
+            {hasAnyPlan && (
+              <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Seus Cursos</h4>
+                <div className="space-y-3">
+                  {allPlans.map((p, idx) => {
+                    // Tenta achar o título do curso pelo ID do plano (que deve ser o courseId)
+                    // Como coursePlans é um objeto, precisamos iterar as chaves para saber qual ID corresponde a este plano 'p'
+                    // Mas aqui 'p' é o valor. Vamos achar a chave.
+                    const courseId = Object.keys(profile?.coursePlans || {}).find(key => profile?.coursePlans[key] === p);
+                    const course = courses.find(c => c.id === courseId);
+                    return (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{course?.title || courseId || "Curso Desconhecido"}</span>
+                        <span className="text-gray-500 text-xs">{formatDisplayDate(p.plan.expectedCompletionDate)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
           </div>
 
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={isGeneratingPlan}
-            className="w-full px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 transition-all disabled:bg-gray-500"
+            className="w-full px-6 py-4 bg-linear-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isGeneratingPlan ? "Gerando plano..." : (plan ? "Gerar Novo Plano de Estudos" : "Planejar Meus Estudos")}
+            {isGeneratingPlan ? "Gerando plano..." : "Criar Novo Plano de Estudos"}
           </button>
         </div>
       </div>
@@ -221,6 +277,7 @@ const PlannerPage: React.FC = () => {
         <StudyPlannerModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+        // Sem courseId, ele vai pedir para selecionar o curso
         />
       )}
     </div>
@@ -228,15 +285,15 @@ const PlannerPage: React.FC = () => {
 };
 
 // Componentes StatCard e ReorgNotification
-const StatCard: React.FC<{ icon: React.ElementType; title: string; value: string; }> =
-  ({ icon: Icon, title, value }) => (
-    <div className="flex items-center gap-4">
-      <div className="p-3 bg-primary-100 dark:bg-primary-900/50 rounded-lg">
-        <Icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+const StatCard: React.FC<{ icon: React.ElementType; title: string; value: string; color?: string; bg?: string }> =
+  ({ icon: Icon, title, value, color = "text-primary-600", bg = "bg-primary-100" }) => (
+    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+      <div className={`p-3 ${bg} rounded-lg`}>
+        <Icon className={`w-6 h-6 ${color}`} />
       </div>
       <div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-        <p className="text-lg font-bold">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{title}</p>
+        <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>
   );

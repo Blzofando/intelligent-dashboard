@@ -5,8 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCourseContext } from '@/context/CourseProvider';
 import VideoPlayer from '@/components/VideoPlayer';
-import { CheckCircle, BookOpen, ChevronRight, ChevronLeft, Download } from 'lucide-react';
+import { CheckCircle, BookOpen, ChevronRight, ChevronLeft, Download, Sparkles, PlayCircle } from 'lucide-react';
 import { Lesson, Module } from '@/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
 
 type FlatLesson = Lesson & { moduleId: string; moduleTitle: string };
 
@@ -69,7 +71,7 @@ const LessonPlayerPage: React.FC = () => {
   };
 
   if (!course) {
-    return <div className="p-8 text-center text-gray-600 dark:text-gray-300">Carregando curso...</div>;
+    return <div className="p-8 text-center text-gray-600 dark:text-gray-300 animate-pulse">Carregando curso...</div>;
   }
 
   if (!lesson || !module) {
@@ -84,114 +86,157 @@ const LessonPlayerPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-        <Link href={`/courses/${courseId}/modules`} className="hover:text-primary-600 dark:hover:text-primary-400">
+      <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 overflow-x-auto whitespace-nowrap pb-2">
+        <Link href={`/courses/${courseId}/modules`} className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
           Módulos
         </Link>
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-4 h-4 shrink-0" />
         <Link
           href={`/courses/${courseId}/module/${module.id}`}
-          className="hover:text-primary-600 dark:hover:text-primary-400"
+          className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           {module.title}
         </Link>
-        <ChevronRight className="w-4 h-4" />
-        <span className="text-gray-800 dark:text-white font-medium">{lesson.title}</span>
-      </div>
+        <ChevronRight className="w-4 h-4 shrink-0" />
+        <span className="text-gray-800 dark:text-white font-medium truncate max-w-[200px] md:max-w-none">{lesson.title}</span>
+      </nav>
 
       {/* Cabeçalho da Aula */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start justify-between gap-6">
+          <div className="flex-1 space-y-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white leading-tight">
               {lesson.title}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <BookOpen className="w-4 h-4" />
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                <BookOpen className="w-4 h-4 text-primary-500" />
                 {module.title}
               </span>
               {isCompleted && (
-                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-medium">
                   <CheckCircle className="w-4 h-4" />
                   Concluída
                 </span>
               )}
             </div>
           </div>
+
           {!isCompleted && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleComplete}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md flex items-center gap-2"
+              className="w-full md:w-auto px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 font-semibold"
             >
               <CheckCircle className="w-5 h-5" />
               Marcar como Concluída
-            </button>
+            </motion.button>
           )}
         </div>
-        {showCompletionMessage && (
-          <div className="mt-4 p-4 bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 rounded-lg text-green-800 dark:text-green-200">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-semibold">Parabéns! Aula concluída! 🎉</span>
-            </div>
-          </div>
-        )}
-      </div>
+
+        <AnimatePresence>
+          {showCompletionMessage && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-800 dark:text-green-200 flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full">
+                  <Sparkles className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="font-semibold">Parabéns! Aula concluída com sucesso! 🎉</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Player de Vídeo */}
-      <VideoPlayer
-        lessonId={lesson.id}
-        lessonTitle={lesson.title}
-        onComplete={handleComplete}
-      />
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="rounded-2xl overflow-hidden shadow-2xl bg-black"
+      >
+        <VideoPlayer
+          lessonId={lesson.id}
+          lessonTitle={lesson.title}
+          onComplete={handleComplete}
+        />
+      </motion.div>
 
       {/* Navegação entre Aulas */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {previousLesson ? (
-          <button
-            onClick={goToPreviousLesson}
-            className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700"
+          <Link
+            href={`/courses/${courseId}/lesson/${previousLesson.id}`}
+            className="group flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-all hover:shadow-md"
           >
-            <ChevronLeft className="w-5 h-5" />
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Anterior</p>
-              <p className="font-semibold text-gray-800 dark:text-white">
-                {previousLesson.title.substring(0, 30)}...
+            <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-full group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+              <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Aula Anterior</p>
+              <p className="font-semibold text-gray-800 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                {previousLesson.title}
               </p>
             </div>
-          </button>
+          </Link>
         ) : (
-          <div></div>
+          <div className="hidden md:block"></div>
         )}
+
         {nextLesson ? (
-          <button
-            onClick={goToNextLesson}
-            className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg shadow-md hover:bg-primary-700 transition-all"
+          <Link
+            href={`/courses/${courseId}/lesson/${nextLesson.id}`}
+            className="group flex items-center justify-end gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-all hover:shadow-md text-right"
           >
-            <div className="text-right">
-              <p className="text-xs text-primary-100">Próxima</p>
-              <p className="font-semibold">
-                {nextLesson.title.substring(0, 30)}...
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Próxima Aula</p>
+              <p className="font-semibold text-gray-800 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                {nextLesson.title}
               </p>
             </div>
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-full group-hover:bg-primary-100 dark:group-hover:bg-primary-900/40 transition-colors">
+              <ChevronRight className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            </div>
+          </Link>
         ) : (
           <Link
             href={`/courses/${courseId}/modules`}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-all"
+            className="group flex items-center justify-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
           >
-            🎉 Voltar aos Módulos
+            <span className="font-bold text-green-700 dark:text-green-400">Voltar aos Módulos</span>
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
           </Link>
         )}
       </div>
 
       {/* Área de Recursos */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
+      >
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <Download className="w-5 h-5 text-primary-500" />
           Recursos da Aula
         </h2>
         <div className="space-y-3">
@@ -200,30 +245,30 @@ const LessonPlayerPage: React.FC = () => {
               href={lesson.materialUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+              className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
             >
-              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center shrink-0">
-                <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                <Download className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <p className="font-medium text-gray-800 dark:text-white">Baixar Materiais da Aula</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para fazer o download (.zip)</p>
+                <p className="font-semibold text-gray-800 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors">Baixar Materiais da Aula</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para fazer o download do arquivo (.zip)</p>
               </div>
             </a>
           ) : (
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-gray-400 dark:text-gray-500" />
               </div>
               <div>
-                <p className="font-medium text-gray-800 dark:text-white">Material de Apoio</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum material complementar para esta aula.</p>
+                <p className="font-medium text-gray-600 dark:text-gray-300">Material de Apoio</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum material complementar disponível para esta aula.</p>
               </div>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

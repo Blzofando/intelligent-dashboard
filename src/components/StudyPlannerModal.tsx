@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { X, Check, Calendar as CalendarIcon, Clock, BookOpen, Loader2, Trophy, Target } from 'lucide-react';
@@ -12,22 +12,22 @@ import { courses } from '@/data/courses';
 interface StudyPlannerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  courseId?: string; // Opcional: Se passado, gera plano só para este curso
 }
 
-export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, onClose }) => {
+export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, onClose, courseId }) => {
   const { user } = useAuthStore();
   const { updateStudyPlan, profile } = useProfileStore();
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Step 1: Mode & Time
+  // Step 1: Course Selection (if courseId not provided)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(courseId || null);
+
+  // Step 2: Mode & Time
   const [mode, setMode] = useState<StudySettings['mode']>('regular');
   const [minutesPerDay, setMinutesPerDay] = useState(60);
-
-  // Step 2: Courses & Distribution
-  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
-  const [courseDistribution, setCourseDistribution] = useState<Record<string, number>>({});
 
   // Step 3: Schedule
   const [daysOfWeek, setDaysOfWeek] = useState<Set<string>>(new Set(['seg', 'ter', 'qua', 'qui', 'sex']));
@@ -35,44 +35,21 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
 
   const allDays = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
+  useEffect(() => {
+    if (isOpen) {
+      // Reset state on open
+      setStep(courseId ? 2 : 1); // Skip course selection if courseId provided
+      setSelectedCourseId(courseId || null);
+      setMode('regular');
+      setMinutesPerDay(60);
+      setDaysOfWeek(new Set(['seg', 'ter', 'qua', 'qui', 'sex']));
+      setStartDate(new Date());
+    }
+  }, [isOpen, courseId]);
+
   // Handlers
-  const handleCourseToggle = (courseId: string) => {
-    let newSelected = [...selectedCourseIds];
-    if (newSelected.includes(courseId)) {
-      newSelected = newSelected.filter(id => id !== courseId);
-    } else {
-      newSelected.push(courseId);
-    }
-    setSelectedCourseIds(newSelected);
-
-    // Recalcula distribuição igualitária
-    if (newSelected.length > 0) {
-      const share = Math.floor(100 / newSelected.length);
-      const remainder = 100 % newSelected.length;
-      const newDist: Record<string, number> = {};
-      newSelected.forEach((id, index) => {
-        newDist[id] = share + (index === 0 ? remainder : 0);
-      });
-      setCourseDistribution(newDist);
-    } else {
-      setCourseDistribution({});
-    }
-  };
-
-  const handleDistributionChange = (courseId: string, newValue: number) => {
-    if (selectedCourseIds.length === 2) {
-      const otherId = selectedCourseIds.find(id => id !== courseId);
-      if (otherId) {
-        setCourseDistribution({
-          [courseId]: newValue,
-          [otherId]: 100 - newValue
-        });
-      }
-    } else {
-      // Simples atualização para > 2 cursos (pode não somar 100% perfeitamente na UI, mas o backend normaliza ou o user ajusta)
-      // Idealmente implementaria uma lógica de "roubar" dos outros, mas para MVP isso serve.
-      setCourseDistribution(prev => ({ ...prev, [courseId]: newValue }));
-    }
+  const handleCourseSelect = (id: string) => {
+    setSelectedCourseId(id);
   };
 
   const handleDayToggle = (day: string) => {
@@ -88,7 +65,7 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
   };
 
   const handleGeneratePlan = async () => {
-    if (!user || !updateStudyPlan || !profile) return;
+    if (!user || !updateStudyPlan || !profile || !selectedCourseId) return;
     setIsLoading(true);
 
     try {
@@ -101,8 +78,8 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
         daysOfWeek: Array.from(daysOfWeek) as any,
         focusArea: profile.focusArea || "Geral",
         startDate: finalDate.toISOString().split('T')[0],
-        selectedCourses: selectedCourseIds,
-        courseDistribution: courseDistribution
+        selectedCourses: [selectedCourseId], // Array com 1 item para compatibilidade com API
+        courseDistribution: { [selectedCourseId]: 100 }
       };
 
       const response = await fetch('/api/gemini/generate-plan', {
@@ -110,14 +87,17 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           settings,
-          completedLessons: profile.completedLessons
+          completedLessons: profile.completedLessons,
+          courseId: selectedCourseId // Passa o ID para a API saber qual curso focar
         }),
       });
 
       if (!response.ok) throw new Error("Erro ao gerar plano");
 
       const data = await response.json();
-      await updateStudyPlan(user.uid, settings, data);
+
+      // Salva o plano especificamente para o curso selecionado
+      await updateStudyPlan(user.uid, selectedCourseId, settings, data);
       onClose();
 
     } catch (error) {
@@ -134,7 +114,9 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Planejador de Estudos</h2>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            {courseId ? `Plano de Estudos: ${courses.find(c => c.id === courseId)?.title}` : 'Novo Plano de Estudos'}
+          </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
             <X className="w-6 h-6 text-gray-500" />
           </button>
@@ -152,10 +134,47 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
             ))}
           </div>
 
-          {/* STEP 1: MODE */}
-          {step === 1 && (
+          {/* STEP 1: COURSE SELECTION (Only if not pre-selected) */}
+          {step === 1 && !courseId && (
             <div className="space-y-6">
-              <h3 className="text-xl font-semibold dark:text-white">1. Qual seu ritmo de estudo?</h3>
+              <h3 className="text-xl font-semibold dark:text-white">1. Escolha o curso para o plano:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {courses.map(course => (
+                  <div
+                    key={course.id}
+                    onClick={() => handleCourseSelect(course.id)}
+                    className={`cursor-pointer p-4 border-2 rounded-lg flex items-center gap-4 transition-all ${selectedCourseId === course.id
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                      }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedCourseId === course.id ? 'border-primary-500 bg-primary-500' : 'border-gray-400'
+                      }`}>
+                      {selectedCourseId === course.id && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold dark:text-white">{course.title}</h4>
+                      <p className="text-xs text-gray-500">{course.modules.length} módulos</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setStep(2)}
+                  disabled={!selectedCourseId}
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Próximo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: MODE */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold dark:text-white">2. Qual seu ritmo de estudo?</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ModeCard
                   title="Suave"
@@ -199,112 +218,18 @@ export const StudyPlannerModal: React.FC<StudyPlannerModalProps> = ({ isOpen, on
                 </div>
               )}
 
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setStep(2)}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                >
-                  Próximo
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: COURSES */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold dark:text-white">2. O que você vai estudar?</h3>
-
-              {/* Seleção de Cursos */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {courses.map(course => (
-                  <div
-                    key={course.id}
-                    onClick={() => handleCourseToggle(course.id)}
-                    className={`cursor-pointer p-4 border-2 rounded-lg flex items-center gap-4 transition-all ${selectedCourseIds.includes(course.id)
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
-                      }`}
+              <div className="flex justify-between mt-6">
+                {!courseId && (
+                  <button
+                    onClick={() => setStep(1)}
+                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
                   >
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedCourseIds.includes(course.id) ? 'border-primary-500 bg-primary-500' : 'border-gray-400'
-                      }`}>
-                      {selectedCourseIds.includes(course.id) && <Check className="w-4 h-4 text-white" />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold dark:text-white">{course.title}</h4>
-                      <p className="text-xs text-gray-500">{course.modules.length} módulos</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Distribuição (Gráfico de Barra) */}
-              {selectedCourseIds.length > 0 && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <h4 className="text-sm font-semibold mb-3 dark:text-gray-200">Distribuição do Tempo ({minutesPerDay} min/dia)</h4>
-
-                  {/* Barra Visual */}
-                  <div className="h-6 w-full bg-gray-200 rounded-full overflow-hidden flex mb-4">
-                    {selectedCourseIds.map((id, index) => {
-                      const pct = courseDistribution[id] || 0;
-                      const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'];
-                      const color = colors[index % colors.length];
-
-                      return pct > 0 ? (
-                        <div
-                          key={id}
-                          className={`${color} h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-300`}
-                          style={{ width: `${pct}%` }}
-                        >
-                          {pct > 10 && `${pct}%`}
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-
-                  {/* Sliders de Ajuste */}
-                  {selectedCourseIds.length > 1 ? (
-                    <div className="space-y-4">
-                      {selectedCourseIds.map((id, index) => {
-                        const course = courses.find(c => c.id === id);
-                        const pct = courseDistribution[id] || 0;
-                        const time = Math.round((minutesPerDay * pct) / 100);
-
-                        return (
-                          <div key={id} className="flex items-center gap-4">
-                            <span className="text-sm font-medium w-32 truncate dark:text-gray-300">{course?.title}</span>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={pct}
-                              onChange={(e) => handleDistributionChange(id, Number(e.target.value))}
-                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                            />
-                            <span className="text-sm font-bold w-16 text-right dark:text-gray-300">{pct}%</span>
-                            <span className="text-xs text-gray-500 w-16 text-right">({time} min)</span>
-                          </div>
-                        );
-                      })}
-                      <p className="text-xs text-gray-400 mt-2 text-center">Ajuste as porcentagens para definir quanto tempo dedicar a cada curso.</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 text-center">100% do tempo dedicado a este curso.</p>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-4 mt-4">
-                <button
-                  onClick={() => setStep(1)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
-                >
-                  Voltar
-                </button>
+                    Voltar
+                  </button>
+                )}
                 <button
                   onClick={() => setStep(3)}
-                  disabled={selectedCourseIds.length === 0}
-                  className="flex-1 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 ml-auto"
                 >
                   Próximo
                 </button>

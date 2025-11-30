@@ -1,61 +1,63 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import Link from 'next/link';
+import React from 'react';
 import { useCourseContext } from '@/context/CourseProvider';
-import { Module } from '@/types';
+import ModuleCard from '@/components/ModuleCard';
+import { motion } from 'framer-motion';
+import { BookOpen, Sparkles } from 'lucide-react';
 
-const ModuleCard: React.FC<{ module: Module, completedLessons: Set<string> }> = ({ module, completedLessons }) => {
-  const { progress } = useMemo(() => {
-    const completedInModule = module.lessons.filter(lesson => completedLessons.has(lesson.id)).length;
-    const totalLessons = module.lessons.length;
-    const progress = totalLessons > 0 ? Math.round((completedInModule / totalLessons) * 100) : 0;
-    return { progress };
-  }, [module, completedLessons]);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 truncate mb-1">{module.title}</h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">{module.lessons.length} aulas</p>
-
-      {/* --- CORREÇÃO DA BARRA DE PROGRESSO --- */}
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
-        {/* Usamos 'style' simples. Isso ignora o linter e funciona. */}
-        <div
-          className="bg-primary-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-      {/* --- FIM DA CORREÇÃO --- */}
-
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{progress}% completo</span>
-        <Link href={`module/${module.id}`} className="px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          Ver Módulo
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-const CoursePage: React.FC = () => {
-  const { course, completedLessons } = useCourseContext();
+export default function ModulesPage() {
+  const { course } = useCourseContext();
 
   if (!course) {
-    return <div className="p-8 text-center text-gray-600 dark:text-gray-300">Carregando curso...</div>;
+    return <div className="p-8 text-center text-gray-600 dark:text-gray-300 animate-pulse">Carregando módulos...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Módulos do Curso</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {course.modules.map(module => (
-          <ModuleCard key={module.id} module={module} completedLessons={completedLessons} />
+    <div className="max-w-5xl mx-auto space-y-8">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center gap-4 mb-8"
+      >
+        <div className="p-3 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20">
+          <BookOpen className="w-8 h-8 text-white" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            Módulos do Curso
+            <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Explore o conteúdo e acompanhe seu progresso
+          </p>
+        </div >
+      </motion.div >
+
+      <div className="grid gap-6">
+        {course.modules.map((module, index) => (
+          <motion.div
+            key={module.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <ModuleCard
+              module={module}
+              courseId={course.slug} // Usando slug para URL amigável se disponível, ou id
+            />
+          </motion.div>
         ))}
       </div>
-    </div>
+
+      {
+        course.modules.length === 0 && (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400">Nenhum módulo encontrado para este curso.</p>
+          </div>
+        )
+      }
+    </div >
   );
-};
-
-export default CoursePage;
-
+}

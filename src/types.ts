@@ -28,6 +28,11 @@ export interface YouTubeVideo {
   embedUrl: string;
 }
 
+export interface CoursePlan {
+  settings: StudySettings;
+  plan: StudyPlan;
+}
+
 // --- PERFIL DO USUÁRIO (ATUALIZADO) ---
 export interface UserProfile {
   displayName: string;
@@ -38,9 +43,8 @@ export interface UserProfile {
   completedLessons: string[];
   lessonNotes: Record<string, string>;
 
-  // Informações do Plano
-  studySettings: StudySettings | null;
-  studyPlan: StudyPlan | null;
+  // Informações do Plano (AGORA POR CURSO)
+  coursePlans: Record<string, CoursePlan>; // Chave: courseId (ou slug)
 
   // --- LÓGICA DE OFENSIVA (STREAK) ATUALIZADA ---
   studyStreak: number;
