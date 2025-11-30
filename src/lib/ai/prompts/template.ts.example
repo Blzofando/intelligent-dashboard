@@ -1,0 +1,151 @@
+// src/lib/ai/prompts/template.ts.example
+/**
+ * TEMPLATE PARA CRIAR PROMPTS DE NOVO CURSO
+ * 
+ * Para adicionar um novo curso:
+ * 1. Copie este arquivo e renomeie para: nome-do-curso.ts
+ * 2. Adapte todos os prompts para o contexto do seu curso
+ * 3. Adicione o import em src/lib/ai/prompts/index.ts
+ * 4. Adicione o mapa no coursePromptsMap
+ */
+
+import { CoursePrompts } from './types';
+
+export const meuCursoPrompts: CoursePrompts = {
+  /**
+   * Prompt para gerar flashcards
+   */
+  flashcards: (moduleTitle: string, lessonTitles: string[]) => `
+    Crie 5 flashcards para o módulo de [NOME DO CURSO] "${moduleTitle}", 
+    baseado nos tópicos: ${lessonTitles.join(", ")}.
+    
+    Seu JSON deve seguir exatamente esta estrutura:
+    [
+        {
+            "front": "Termo ou pergunta sobre [SEU TEMA]",
+            "back": "Definição clara e objetiva"
+        }
+    ]
+    
+    Gere 5 flashcards focados em [CARACTERÍSTICAS DO SEU CURSO].
+    Priorize:
+    - [Aspecto 1 do seu curso]
+    - [Aspecto 2 do seu curso]
+    - [Aspecto 3 do seu curso]
+  `,
+
+  /**
+   * Prompt para gerar resumo
+   */
+  summary: (moduleTitle: string, lessonTitles: string[]) => `
+    Gere um resumo conciso para o módulo do curso de [NOME DO CURSO] "${moduleTitle}", 
+    que aborda os seguintes tópicos: ${lessonTitles.join(", ")}.
+    
+    O resumo deve:
+    - Ter no máximo 100 palavras
+    - Focar em [ASPECTOS PRINCIPAIS DO SEU CURSO]
+    - Ser objetivo e direto
+    - Mencionar aplicações práticas
+  `,
+
+  /**
+   * Prompt para filtrar vídeos do YouTube com IA
+   */
+  youtubeFilter: (query: string, focus: string) => `
+    Você é um curador de conteúdo sênior especializado em [NOME DO CURSO].
+    O aluno está estudando [NOME DO CURSO] e tem o seguinte foco: "${focus}"
+    Ele está buscando vídeos sobre: "${query}"
+
+    Analise os 20 vídeos encontrados e selecione os 10 MELHORES e MAIS RELEVANTES.
+    
+    Critérios de seleção:
+    - Priorize [TIPO DE CONTEÚDO DO SEU CURSO]
+    - Foque em [CARACTERÍSTICA DO SEU CURSO]
+    - Evite [O QUE EVITAR]
+    - Prefira vídeos de [TIPO DE CRIADORES]
+    - Considere a clareza e didática do conteúdo
+    
+    Responda APENAS com um array JSON dos 10 vídeos selecionados, no formato original.
+  `,
+
+  /**
+   * Gera queries de busca do YouTube
+   */
+  youtubeQuery: (moduleTitle: string, focusArea?: string) => {
+    const topicQuery = `tutorial [NOME DO CURSO] "${moduleTitle}"`;
+    
+    if (focusArea && focusArea !== "Sem foco definido") {
+      const focusQuery = `[NOME DO CURSO] "${moduleTitle}" ${focusArea}`;
+      return [topicQuery, focusQuery];
+    }
+    
+    return [topicQuery];
+  },
+
+  /**
+   * Prompt para gerar quiz
+   */
+  quiz: (moduleTitle: string, lessonTitles: string[]) => `
+    Crie um quiz com 3 perguntas de múltipla escolha sobre [NOME DO CURSO] no módulo "${moduleTitle}", 
+    com base nos tópicos: ${lessonTitles.join(", ")}.
+    
+    Formato JSON:
+    [
+        {
+            "question": "Pergunta sobre [SEU TEMA]?",
+            "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+            "correctAnswer": "Opção correta (deve ser igual a uma das options)"
+        }
+    ]
+    
+    Requisitos:
+    - 3 perguntas práticas sobre [SEU CURSO]
+    - Baseadas em [FUNDAMENTOS/LEI/CONCEITOS]
+    - Foque em situações reais
+    - Evite pegadinhas ou questões decorebas
+  `,
+
+  /**
+   * Prompt para chat/assistente
+   */
+  chat: (context: string, userMessage: string) => `
+    Você é um assistente especializado em [NOME DO CURSO].
+    
+    Contexto do aluno:
+    ${context}
+    
+    Pergunta:
+    ${userMessage}
+    
+    Responda de forma:
+    - Clara e prática
+    - Baseada em [FUNDAMENTOS DO CURSO]
+    - Com exemplos práticos
+    - Incentivando boas práticas
+  `,
+};
+
+/**
+ * INSTRUÇÕES DE USO:
+ * 
+ * 1. Após criar seu arquivo de prompts (ex: excel.ts), adicione em index.ts:
+ * 
+ *    import { excelPrompts } from './excel';
+ * 
+ *    export const coursePromptsMap: Record<string, CoursePrompts> = {
+ *      'power-bi': powerBiPrompts,
+ *      'licitacao': licitacaoPrompts,
+ *      'excel': excelPrompts,  // <-- ADICIONE AQUI
+ *    };
+ * 
+ * 2. Use o courseId nos componentes:
+ *    - Ao chamar as APIs, passe: { courseId: 'excel', ... }
+ *    - As rotas automaticamente usarão os prompts corretos
+ * 
+ * 3. Teste todas as funcionalidades:
+ *    - Flashcards
+ *    - Summary
+ *    - Quiz
+ *    - YouTube
+ *    - Chat
+ */

@@ -2,33 +2,33 @@ import { QuizQuestion, Flashcard, StudyPlan, YouTubeVideo } from "@/types"; // I
 
 // Função para formatar data como "YYYY-MM-DD"
 function formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0];
 }
 
 
 
 // --- NOVA FUNÇÃO: Recomendações do YouTube (Carrossel) ---
 export const getYoutubeRecommendations = async (focusArea: string, nextTopic: string): Promise<YouTubeVideo[]> => {
-  try {
-    const response = await fetch('/api/gemini/youtube-recs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ focusArea, nextTopic }),
-    });
+  try {
+    const response = await fetch('/api/gemini/youtube-recs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ focusArea, nextTopic }),
+    });
 
-    if (!response.ok) {
-      throw new Error('Erro na resposta da API de recomendações do YouTube');
-    }
+    if (!response.ok) {
+      throw new Error('Erro na resposta da API de recomendações do YouTube');
+    }
 
-    const data: YouTubeVideo[] = await response.json();
-    return data;
+    const data: YouTubeVideo[] = await response.json();
+    return data;
 
-  } catch (error) {
-    console.error("Erro ao chamar a API de recomendações do YouTube:", error);
-    return [];
-  }
+  } catch (error) {
+    console.error("Erro ao chamar a API de recomendações do YouTube:", error);
+    return [];
+  }
 };
 
 
@@ -38,14 +38,14 @@ const dummyPromise = <T,>(data: T): Promise<T> =>
 
 
 // --- API do Resumo ---
-export const generateSummary = async (moduleTitle: string, lessonTitles: string[]): Promise<string> => {
+export const generateSummary = async (moduleTitle: string, lessonTitles: string[], courseId?: string): Promise<string> => {
   try {
     const response = await fetch('/api/gemini/summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ moduleTitle, lessonTitles }),
+      body: JSON.stringify({ moduleTitle, lessonTitles, courseId }),
     });
 
     if (!response.ok) {
@@ -62,7 +62,7 @@ export const generateSummary = async (moduleTitle: string, lessonTitles: string[
 };
 
 // --- API do Quiz ---
-export const generateQuiz = async (moduleTitle: string, lessonTitles: string[]): Promise<QuizQuestion[]> => {
+export const generateQuiz = async (moduleTitle: string, lessonTitles: string[], courseId?: string): Promise<QuizQuestion[]> => {
   try {
     const response = await fetch('/api/gemini/quiz', {
       method: 'POST',
@@ -86,14 +86,14 @@ export const generateQuiz = async (moduleTitle: string, lessonTitles: string[]):
 };
 
 // --- API dos Flashcards ---
-export const generateFlashcards = async (moduleTitle: string, lessonTitles: string[]): Promise<Flashcard[]> => {
+export const generateFlashcards = async (moduleTitle: string, lessonTitles: string[], courseId?: string): Promise<Flashcard[]> => {
   try {
     const response = await fetch('/api/gemini/flashcards', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ moduleTitle, lessonTitles }),
+      body: JSON.stringify({ moduleTitle, lessonTitles, courseId }),
     });
 
     if (!response.ok) {
@@ -112,12 +112,12 @@ export const generateFlashcards = async (moduleTitle: string, lessonTitles: stri
 // --- API do Plano de Estudos (Gemini) ---
 export const generateStudyPlan = async (settings: any, completedLessons: string[]): Promise<StudyPlan> => {
   try {
-    const response = await fetch('/api/gemini/generate-plan', { 
+    const response = await fetch('/api/gemini/generate-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         settings,
-        completedLessons, 
+        completedLessons,
       }),
     });
 
@@ -127,12 +127,12 @@ export const generateStudyPlan = async (settings: any, completedLessons: string[
 
     const plan: StudyPlan = await response.json();
     return plan;
-    
+
   } catch (error) {
     console.error("Erro ao chamar a API de plano de estudos:", error);
     // --- A CORREÇÃO ESTÁ AQUI ---
     // Retorna um objeto StudyPlan completo (com 'plan' e 'expectedCompletionDate')
-    return { plan: [], expectedCompletionDate: formatDate(new Date()) }; 
+    return { plan: [], expectedCompletionDate: formatDate(new Date()) };
   }
 };
 
@@ -150,9 +150,9 @@ export const answerCourseQuestion = async (question: string, context: string): P
     if (!response.ok) {
       throw new Error('Erro na resposta da API');
     }
-    
-    const data: { answer: string } = await response.json(); 
-    
+
+    const data: { answer: string } = await response.json();
+
     return data.answer || "Não obtive uma resposta.";
 
   } catch (error) {

@@ -1,77 +1,44 @@
 // src/app/api/gemini/quiz/route.ts
-
-import { GoogleGenerativeAI, GenerationConfig, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { NextRequest, NextResponse } from 'next/server';
-
-// Pega a API Key do arquivo .env.local (de forma segura)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-
-// Configuração para garantir que o Gemini GERE o JSON
-const generationConfig: GenerationConfig = {
-    responseMimeType: "application/json",
-};
-
-// Configuração de segurança (pode ser útil se o Gemini bloquear perguntas legítimas)
-const safetySettings = [
-    {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-];
+import { createGeminiClient } from '@/lib/ai/gemini';
+import { getCoursePrompts } from '@/lib/ai/prompts';
+import { generateQuiz } from '@/lib/ai/functions/quiz';
 
 export async function POST(request: NextRequest) {
     try {
-        // 1. Pega os dados enviados pelo frontend
-        const { moduleTitle, lessonTitles } = await request.json();
+        const { moduleTitle, lessonTitles, courseId } = await request.json();
 
         if (!moduleTitle || !lessonTitles) {
-            return NextResponse.json({ error: 'Dados do módulo são obrigatórios' }, { status: 400 });
+            return NextResponse.json(
+                { error: 'Dados do módulo são obrigatórios' },
+                { status: 400 }
+            );
         }
 
-        // 2. Prepara o prompt para o Gemini
-        const prompt = `
-            Crie um quiz com 3 perguntas de múltipla escolha sobre o módulo de Power BI "${moduleTitle}", 
-            com base nos tópicos: ${lessonTitles.join(", ")}.
-            
-            Seu JSON deve seguir exatamente esta estrutura:
-            [
-                {
-                    "question": "Texto da pergunta 1?",
-                    "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
-                    "correctAnswer": "Opção B"
-                },
-                {
-                    "question": "Texto da pergunta 2?",
-                    "options": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
-                    "correctAnswer": "Opção 3"
-                }
-            ]
-            
-            Gere 3 perguntas. As opções e a resposta correta devem ser de texto simples.
-            A resposta correta (correctAnswer) deve ser EXATAMENTE igual a um dos textos das 'options'.
-        `;
+        // Usa Power BI como padrão se courseId não for fornecido
+        const effectiveCourseId = courseId || 'power-bi';
 
-        // 3. Faz a chamada segura para a IA (no backend)
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-pro",
-            generationConfig, // Diz ao Gemini para responder em JSON
-            safetySettings 
-        });
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        // Busca os prompts do curso
+        const prompts = getCoursePrompts(effectiveCourseId);
 
-        // 4. Retorna o quiz (já em formato JSON) para o frontend
-        // O Next.js vai re-converter para JSON, por isso parseamos primeiro
-        return NextResponse.json(JSON.parse(text));
+        // Cria cliente Gemini
+        const genAI = createGeminiClient();
+
+        // Gera quiz usando a função genérica
+        const quiz = await generateQuiz(
+            genAI,
+            prompts,
+            moduleTitle,
+            lessonTitles
+        );
+
+        return NextResponse.json(quiz);
 
     } catch (error) {
         console.error("Erro na API Route do Gemini Quiz:", error);
-        return NextResponse.json({ error: 'Erro ao gerar o quiz' }, { status: 500 });
+        return NextResponse.json(
+            { error: 'Erro ao gerar o quiz' },
+            { status: 500 }
+        );
     }
 }
