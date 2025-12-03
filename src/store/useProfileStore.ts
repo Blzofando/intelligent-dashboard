@@ -20,6 +20,8 @@ const defaultProfile: UserProfile = {
   coursePlans: {}, // <-- ATUALIZADO: Inicializa vazio
   studyStreak: 0,
   lastStreakUpdate: null,
+  lastDailyCheck: null,
+  dailyCheckHistory: [],
   videoRecommendations: null,
   videoRecsLastUpdated: null,
 };
@@ -63,7 +65,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         const profileData = {
           ...defaultProfile,
           ...data,
-          coursePlans: data.coursePlans || {}
+          coursePlans: data.coursePlans || {},
+          lastDailyCheck: data.lastDailyCheck || null,
+          dailyCheckHistory: data.dailyCheckHistory || []
         };
         set({ profile: profileData as UserProfile, isLoadingProfile: false });
       } else {

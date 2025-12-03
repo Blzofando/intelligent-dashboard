@@ -49,11 +49,27 @@ export interface UserProfile {
   // --- LÓGICA DE OFENSIVA (STREAK) ATUALIZADA ---
   studyStreak: number;
   lastStreakUpdate: string | null; // "YYYY-MM-DD", para saber o último dia que o streak foi incrementado
+
+  // --- TRACKING DE VERIFICAÇÕES DIÁRIAS ---
+  lastDailyCheck?: string | null; // "YYYY-MM-DD" da última verificação automática
+  dailyCheckHistory?: DailyCheckResult[]; // Histórico das últimas verificações
   // --- FIM DA ATUALIZAÇÃO ---
 
   // Cache de Vídeos
   videoRecommendations?: YouTubeVideo[] | null;
   videoRecsLastUpdated?: string | null;
+}
+
+// --- RESULTADO DA VERIFICAÇÃO DIÁRIA ---
+export interface DailyCheckResult {
+  date: string; // "YYYY-MM-DD"
+  checkType: 'penalty' | 'reward' | 'neutral'; // Tipo de verificação
+  courseId: string;
+  missedLessons?: string[]; // IDs das aulas que ficaram pendentes
+  advancedLessons?: string[]; // IDs das aulas feitas antecipadamente
+  streakBefore: number;
+  streakAfter: number;
+  planReorganized: boolean;
 }
 
 // --- Tipos do Curso ---
