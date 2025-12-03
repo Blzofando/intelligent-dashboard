@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/config/firebaseConfig';
+import { adminDb } from '@/config/firebaseAdmin';
 import { UserProfile, DailyCheckResult } from '@/types';
 import { reorganizePlan } from './reorganizePlanUtils';
 
@@ -22,8 +21,7 @@ export async function GET(request: Request) {
     console.log(`[CRON] Executando verificação diária em ${today}`);
 
     // Buscar todos os usuários
-    const usersRef = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersRef);
+    const usersSnapshot = await adminDb.collection('users').get();
 
     let usersProcessed = 0;
     let totalStreaksReset = 0;
@@ -183,8 +181,7 @@ export async function GET(request: Request) {
         ];
 
         // Salvar no Firestore
-        const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, {
+        await adminDb.collection('users').doc(userId).update({
           studyStreak: userData.studyStreak,
           lastStreakUpdate: userData.lastStreakUpdate,
           coursePlans: userData.coursePlans,
