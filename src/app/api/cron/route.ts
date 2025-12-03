@@ -180,14 +180,24 @@ export async function GET(request: Request) {
           ...checkResults
         ];
 
-        // Salvar no Firestore
-        await adminDb.collection('users').doc(userId).update({
-          studyStreak: userData.studyStreak,
-          lastStreakUpdate: userData.lastStreakUpdate,
-          coursePlans: userData.coursePlans,
+        // Salvar no Firestore (remover undefined values)
+        const updateData: any = {
           lastDailyCheck: today,
           dailyCheckHistory: updatedHistory
-        });
+        };
+
+        // Adicionar campos opcionais apenas se não forem undefined
+        if (userData.studyStreak !== undefined) {
+          updateData.studyStreak = userData.studyStreak;
+        }
+        if (userData.lastStreakUpdate !== undefined) {
+          updateData.lastStreakUpdate = userData.lastStreakUpdate;
+        }
+        if (userData.coursePlans !== undefined) {
+          updateData.coursePlans = userData.coursePlans;
+        }
+
+        await adminDb.collection('users').doc(userId).update(updateData);
 
         console.log(`[CRON] Usuário ${userId} processado: ${checkResults.length} verificações`);
 
