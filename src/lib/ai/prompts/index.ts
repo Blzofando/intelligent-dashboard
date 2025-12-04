@@ -1,6 +1,7 @@
 // src/lib/ai/prompts/index.ts
 import { powerBiPrompts } from './power-bi';
 import { licitacaoPrompts } from './licitacao';
+import { htmlPrompts } from './html';
 import { CoursePrompts } from './types';
 
 /**
@@ -11,6 +12,7 @@ export const coursePromptsMap: Record<string, CoursePrompts> = {
     'power-bi': powerBiPrompts,
     'lic': licitacaoPrompts,
     'licitacao': licitacaoPrompts,
+    'html': htmlPrompts,
 };
 
 /**
@@ -32,4 +34,5 @@ export function getCoursePrompts(courseId: string): CoursePrompts {
 // Exportar os prompts individuais para uso direto se necessário
 export { powerBiPrompts } from './power-bi';
 export { licitacaoPrompts } from './licitacao';
+export { htmlPrompts } from './html';
 export type { CoursePrompts, CourseMetadata } from './types';

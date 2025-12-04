@@ -272,7 +272,7 @@ export const excelPrompts: CoursePrompts = {
 ```typescript
 import { powerBiPrompts } from './power-bi';
 import { licitacaoPrompts } from './licitacao';
-import { excelPrompts } from './excel'; // ✅ ADICIONE ESTA LINHA
+import { excelPrompts } from './excel';  // ✅ ADICIONE ESTA LINHA
 import { CoursePrompts } from './types';
 
 export const coursePromptsMap: Record<string, CoursePrompts> = {
