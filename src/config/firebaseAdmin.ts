@@ -35,6 +35,12 @@ function initializeFirebaseAdmin() {
             // Parse da string JSON
             const serviceAccountConfig = JSON.parse(serviceAccount);
 
+            // Garantir que as quebras de linha sejam interpretadas corretamente,
+            // problema comum ao passar JSON por variáveis de ambiente no Next.js
+            if (serviceAccountConfig.private_key) {
+                serviceAccountConfig.private_key = serviceAccountConfig.private_key.replace(/\\n/g, '\n');
+            }
+
             adminApp = initializeApp({
                 credential: cert(serviceAccountConfig),
                 projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,

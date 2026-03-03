@@ -29,7 +29,7 @@ Cada curso precisa estar integrado em **três camadas** principais:
 
 1. **Camada de Dados** - Estrutura do curso (módulos, aulas, IDs)
 2. **Camada de IA** - Prompts customizados para cada funcionalidade
-3. **Camada Visual** - Imagem thumbnail do curso
+3. **Camada Visual** - Imagem thumbnail do curso 
 
 ---
 
@@ -155,7 +155,7 @@ export const excelPrompts: CoursePrompts = {
         Crie 5 flashcards para o módulo de Excel "${moduleTitle}", 
         baseado nos tópicos: ${lessonTitles.join(", ")}.
         
-        Formato JSON:
+        Formato JSON: 
         [
             {
                 "front": "Pergunta sobre fórmulas do Excel",

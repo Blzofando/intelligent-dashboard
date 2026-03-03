@@ -2,6 +2,7 @@
 import { powerBiPrompts } from './power-bi';
 import { licitacaoPrompts } from './licitacao';
 import { htmlPrompts } from './html';
+import { htmlCssPrompts } from './htmlCss';
 import { CoursePrompts } from './types';
 
 /**
@@ -12,6 +13,7 @@ export const coursePromptsMap: Record<string, CoursePrompts> = {
     'power-bi': powerBiPrompts,
     'lic': licitacaoPrompts,
     'licitacao': licitacaoPrompts,
+    'html-css': htmlCssPrompts,
     'html': htmlPrompts,
 };
 
@@ -35,4 +37,5 @@ export function getCoursePrompts(courseId: string): CoursePrompts {
 export { powerBiPrompts } from './power-bi';
 export { licitacaoPrompts } from './licitacao';
 export { htmlPrompts } from './html';
+export { htmlCssPrompts } from './htmlCss';
 export type { CoursePrompts, CourseMetadata } from './types';
