@@ -6,6 +6,7 @@ import YoutubePlayerModal from '@/components/YoutubePlayerModal';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 import { useCourseContext } from '@/context/CourseProvider';
 import { useProfileStore } from '@/store/useProfileStore';
+import { useAuthStore } from '@/store/authStore';
 import YoutubeCarousel from '@/components/YoutubeCarousel';
 import { YouTubeVideo } from '@/types';
 import Link from 'next/link';
@@ -34,6 +35,7 @@ function formatDuration(totalSeconds: number): string {
 
 
 const Dashboard: React.FC = () => {
+    const { user } = useAuthStore();
     const { profile } = useProfileStore();
     const { course, completedLessons } = useCourseContext();
 
@@ -110,44 +112,49 @@ const Dashboard: React.FC = () => {
         { name: 'Restantes', value: totalLessons - completedCount },
     ];
 
-    // --- MUDANÇA: LÓGICA DE CACHE SEMANAL ---
+    // --- MUDANÇA: LÓGICA POR CURSO USANDO FIREBASE (CourseYouTubeRecs) ---
     useEffect(() => {
         const fetchYoutubeRecommendations = async () => {
-            if (!profile || !nextLesson) {
+            // Precisamos do perfil, do plano do curso (pra pegar o focusArea) e da próxima aula
+            if (!profile || !nextLesson || !user) {
                 setIsLoadingYoutubeVideos(false);
                 return;
             }
 
-            const focus = profile.focusArea || "Sem foco definido";
+            const coursePlan = profile.coursePlans[course.id];
+            const focus = coursePlan?.settings.focusArea || profile.focusArea || "Sem foco definido";
             const module = nextLesson.moduleTitle;
 
-            // 1. Criar uma chave de cache única para este módulo e foco
-            const CACHE_KEY = `youtubeRecs_${module}_${focus}`;
-            const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dias
+            setIsLoadingYoutubeVideos(true);
 
-            // 2. Tentar ler do cache
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (cachedData) {
-                const { videos, timestamp } = JSON.parse(cachedData);
-                const isStale = (Date.now() - timestamp) > CACHE_DURATION;
+            try {
+                // 1. Tentar ler do Firebase (subcoleção 'youtube')
+                const cachedData = await useProfileStore.getState().fetchVideoRecs(user.uid, course.id);
 
-                if (!isStale) {
-                    setYoutubeVideos(videos); // Usa o cache
+                // Vamos usar 7 dias como limite de staleness
+                const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
+                let isStale = true;
+
+                if (cachedData && cachedData.lastUpdated) {
+                    const lastUpdatedDate = new Date(cachedData.lastUpdated).getTime();
+                    isStale = (Date.now() - lastUpdatedDate) > CACHE_DURATION;
+                }
+
+                if (cachedData && !isStale && cachedData.videos.length > 0) {
+                    setYoutubeVideos(cachedData.videos); // Usa o que está no Firestore
                     setIsLoadingYoutubeVideos(false);
                     return; // Para aqui, não busca na API
                 }
-            }
 
-            // 3. Se o cache não existe ou está velho, buscar na API
-            setIsLoadingYoutubeVideos(true);
-            try {
+                // 2. Se não existe ou está velho, buscar na API Gemini
                 const response = await fetch('/api/gemini/youtube-recs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         focusArea: focus,
                         nextTopic: nextLesson.title,
-                        moduleTitle: module
+                        moduleTitle: module,
+                        courseId: course.id // <--- MANDAMOS O CURSO pra pegar o prompt certo
                     }),
                 });
 
@@ -156,15 +163,11 @@ const Dashboard: React.FC = () => {
                 const videos: YouTubeVideo[] = await response.json();
                 setYoutubeVideos(videos);
 
-                // 4. Salvar os novos resultados e o timestamp no cache
-                const newCacheData = {
-                    videos: videos,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(newCacheData));
+                // 3. Salvar os novos resultados na subcoleção via Zustand store
+                await useProfileStore.getState().updateVideoRecs(user.uid, course.id, videos);
 
             } catch (error) {
-                console.error(error);
+                console.error("Erro recs youtube:", error);
                 setYoutubeVideos([]); // Define como vazio em caso de erro
             } finally {
                 setIsLoadingYoutubeVideos(false);
@@ -172,8 +175,7 @@ const Dashboard: React.FC = () => {
         };
 
         fetchYoutubeRecommendations();
-        // As dependências garantem que a busca rode se o usuário mudar de módulo
-    }, [profile, nextLesson]);
+    }, [profile, nextLesson, course.id]);
     // --- FIM DA MUDANÇA ---
 
     const handleSelectVideo = (embedUrl: string | null) => {

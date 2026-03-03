@@ -1,60 +1,65 @@
-// src/lib/ai/prompts/licitacao.ts
+// src/lib/ai/prompts/htmlCss.ts
 import { CoursePrompts } from './types';
 
 /**
- * Todos os prompts específicos do curso de Licitação
+ * Todos os prompts específicos do curso de HTML & CSS
  * Centralizados em um único arquivo para fácil manutenção
  */
 export const htmlCssPrompts: CoursePrompts = {
   flashcards: (moduleTitle: string, lessonTitles: string[]) => `
-    Crie 5 flashcards para o módulo de HTML e CSS "${moduleTitle}", 
-    baseado nos tópicos: ${lessonTitles.join(", ")}.
+    Você é um Desenvolvedor Front-end Sênior e Instrutor Didático.
+    Crie 5 flashcards de alto nível para o módulo "${moduleTitle}", 
+    focando estritamente nestes tópicos: ${lessonTitles.join(", ")}.
     
-    Seu JSON deve seguir exatamente esta estrutura:
+    Seu JSON deve seguir EXATAMENTE esta estrutura (sem markdown ou texto extra):
     [
         {
-            "front": "Termo ou pergunta curta sobre o módulo atual que foi trabalhado",
-            "back": "Definição clara e objetiva"
+            "front": "Pergunta concisa ou termo técnico abordado no módulo",
+            "back": "Definição clara, técnica e objetiva, focada nas melhores práticas"
         }
     ]
     
-    Gere 5 flashcards focados em conceitos práticos de HTML e CSS mas foco principal no módulo que foi estudado.
-    
+    Diretrizes:
+    - Retorne APENAS um JSON válido.
+    - Foque em conceitos essenciais de HTML5, CSS3, semântica e estilização aplicáveis ao dia a dia.
+    - A explicação no "back" deve ser fácil de memorizar mas tecnicamente impecável.
   `,
 
   summary: (moduleTitle: string, lessonTitles: string[]) => `
-    Gere um resumo conciso para o módulo do curso de HTML e CSS "${moduleTitle}", 
-    que aborda os seguintes tópicos: ${lessonTitles.join(", ")}.
+    Aja como um Engenheiro Front-end Resumindo um conceito.
+    Gere um resumo profissional e conciso para o módulo "${moduleTitle}", 
+    que cobriu: ${lessonTitles.join(", ")}.
     
     O resumo deve:
-    - Ter no máximo 100 palavras
-    - Focar em aspectos práticos da HTML e CSS
-    - Ser objetivo e direto
-    - Mencionar aplicações no dia a dia de quem trabalha nesta área
+    - Ter no máximo 100 palavras.
+    - Focar nos ganhos práticos: o que o aluno agora é capaz de construir ou estilizar.
+    - Usar terminologia correta (ex: tags semânticas, seletores, box model, layout responsivo).
+    - Ser encorajador, demonstrando a utilidade no mercado de desenvolvimento web.
   `,
 
   youtubeFilter: (query: string, focus: string) => `
-    Você é um curador de conteúdo sênior especializado em HTML e CSS.
-    O aluno está estudando HTML e CSS básico e tem o seguinte foco: "${focus}"
-    Ele está buscando vídeos sobre: "${query}"
+    Você é um Tech Lead Curador de Conteúdo focado em Desenvolvimento Web Front-end.
+    O aluno está estudando um módulo com o seguinte contexto ou área de foco: "${focus}".
+    A busca realizada foi: "${query}".
 
-    Analise os 20 vídeos encontrados e selecione os 10 MELHORES e MAIS RELEVANTES.
+    Sua tarefa: Analisar a lista de 20 vídeos fornecida e retornar os 10 MELHORES.
     
-    Critérios de seleção:
-    - Priorize conteúdo atualizado (HTML e CSS conforme nivel do módulo)
-    - Foque em aplicações práticas para quem trabalha nesta área
-    - Evite conteúdo muito teórico ou acadêmico
-    - Prefira vídeos de profissionais da área
-    - Considere a clareza e didática do conteúdo
+    Critérios rigorosos de seleção:
+    1. Qualidade e Atualização: Priorize HTML5 moderno e CSS3 (Fuja de práticas obsoletas como tabelas para layout ou tags depreciadas).
+    2. Didática: Escolha tutoriais mão na massa ("hands-on"), projetos práticos e canais reconhecidos de programação.
+    3. Relevância: O vídeo deve focar exatamente ou tangenciar fortemente o conhecimento exigido por "${query}".
+    4. Cuidado de Carreira: Se o foco for específico (ex: "UX Design" ou "React"), tente mesclar vídeos que unam HTML/CSS com pílulas dessa área.
     
-    Responda APENAS com um array JSON dos 10 vídeos selecionados, no formato original.
+    Retorne APENAS o array JSON filtrado contendo os 10 vídeos, mantendo os objetos estritamente no formato original fornecido. Não inclua texto explicativo fora do JSON.
   `,
 
   youtubeQuery: (moduleTitle: string, focusArea?: string) => {
-    const topicQuery = `tutorial html e css "${moduleTitle}" básico`;
+    // Removemos a palavra "básico" para o YouTube entregar conteúdos mais ricos
+    // e usamos termos mais assertivos para os algoritmos de busca.
+    const topicQuery = `tutorial ${moduleTitle} html css desenvolvimento web`;
 
     if (focusArea && focusArea !== "Sem foco definido") {
-      const focusQuery = `html e css "${moduleTitle}" ${focusArea}`;
+      const focusQuery = `${moduleTitle} em html css focado em ${focusArea}`;
       return [topicQuery, focusQuery];
     }
 
@@ -62,38 +67,39 @@ export const htmlCssPrompts: CoursePrompts = {
   },
 
   quiz: (moduleTitle: string, lessonTitles: string[]) => `
-    Crie um quiz com 3 perguntas de múltipla escolha sobre HTML e CSS no módulo "${moduleTitle}", 
-    com base nos tópicos: ${lessonTitles.join(", ")}.
+    Aja como um Tech Recruiter ou Avaliador Técnico Front-end.
+    Crie um quiz com 3 perguntas de múltipla escolha sobre o módulo "${moduleTitle}", 
+    baseando-se nos tópicos ensinados: ${lessonTitles.join(", ")}.
     
-    Formato JSON:
+    Formato EXATO do JSON esperado (retorne APENAS o JSON, sem marcações markdown):
     [
         {
-            "question": "Pergunta sobre HTML e CSS?",
+            "question": "Situação prática ou problema comum focando em HTML/CSS?",
             "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
-            "correctAnswer": "Opção correta (deve ser igual a uma das options)"
+            "correctAnswer": "O texto exato da Opção correta"
         }
     ]
     
     Requisitos:
-    - 3 perguntas práticas sobre HTML e CSS
-    - Baseados em situações que envolva a area
-    - Foque em situações reais que programadores iniciantes enfrentam
-    - Evite pegadinhas ou questões muito decorebas
+    - 3 perguntas desafiadoras mas adequadas ao nível do módulo.
+    - Crie cenários reais (ex: "Ao precisar centralizar uma div", ou "Para garantir acessibilidade na imagem...").
+    - Apenas uma resposta é 100% correta segundo as especificações do W3C/MDN.
+    - Evite decoreba inútil; teste o raciocínio aplicado do desenvolvedor.
   `,
 
   chat: (context: string, userMessage: string) => `
-    Você é um assistente especializado em HTML e CSS.
+    Você é um Desenvolvedor Front-end Sênior auxiliando um programador júnior/pleno.
     
-    Contexto do aluno:
+    Contexto do conhecimento atual do aluno (aulas já vistas):
     ${context}
     
-    Pergunta:
+    Dúvida do Desenvolvedor:
     ${userMessage}
     
-    Responda de forma:
-    - Clara e prática
-    - Baseada na HTML e CSS
-    - Com exemplos do dia a dia de quem trabalha nesta area de programação de html e css iniciante
-    - Incentivando boas práticas
+    Diretrizes da sua resposta:
+    - Seja empático, claro e altamente técnico.
+    - Cite propriedades CSS exatas, tags semânticas corretas e forneça pequenos exemplos de código ("snippets") se for ajudar.
+    - Destaque boas práticas (ex: separação de responsabilidades, mobile-first, acessibilidade).
+    - Se a dúvida for além do contexto atual dele, responda o imediato e elogie sua curiosidade para aprender ferramentas avançadas.
   `,
 };

@@ -33,6 +33,12 @@ export interface CoursePlan {
   plan: StudyPlan;
 }
 
+// --- Recomendações de Vídeo (POR CURSO) ---
+export interface CourseYouTubeRecs {
+  videos: YouTubeVideo[];
+  lastUpdated: string; // "YYYY-MM-DD"
+}
+
 // --- PERFIL DO USUÁRIO (ATUALIZADO) ---
 export interface UserProfile {
   displayName: string;
@@ -54,10 +60,6 @@ export interface UserProfile {
   lastDailyCheck?: string | null; // "YYYY-MM-DD" da última verificação automática
   dailyCheckHistory?: DailyCheckResult[]; // Histórico das últimas verificações
   // --- FIM DA ATUALIZAÇÃO ---
-
-  // Cache de Vídeos
-  videoRecommendations?: YouTubeVideo[] | null;
-  videoRecsLastUpdated?: string | null;
 }
 
 // --- RESULTADO DA VERIFICAÇÃO DIÁRIA ---

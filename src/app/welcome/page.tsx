@@ -132,7 +132,8 @@ const WelcomePage: React.FC = () => {
 
       if (recsResponse.ok) {
         const videos: YouTubeVideo[] = await recsResponse.json();
-        await updateVideoRecs(uid, videos);
+        // Passar explicitamente 'power-bi' aqui pois é o curso padrão inicial do dashboard antigo
+        await updateVideoRecs(uid, 'power-bi', videos);
       }
 
     } catch (error) {

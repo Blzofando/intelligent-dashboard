@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/config/firebaseConfig';
-import { UserProfile, StudyPlan, StudySettings, YouTubeVideo, StudyPlanDay, CoursePlan } from '@/types';
+import { UserProfile, StudyPlan, StudySettings, YouTubeVideo, StudyPlanDay, CoursePlan, CourseYouTubeRecs } from '@/types';
 
 // --- Helper: Formatar Data ---
 function formatDate(date: Date): string {
@@ -22,8 +22,6 @@ const defaultProfile: UserProfile = {
   lastStreakUpdate: null,
   lastDailyCheck: null,
   dailyCheckHistory: [],
-  videoRecommendations: null,
-  videoRecsLastUpdated: null,
 };
 
 interface ProfileState {
@@ -44,7 +42,10 @@ interface ProfileState {
   setGeneratingPlan: (status: boolean) => void;
   setShowPlanReadyToast: (show: boolean) => void;
 
-  updateVideoRecs: (uid: string, videos: YouTubeVideo[]) => Promise<void>;
+  // --- Ações de Vídeo (POR CURSO) ---
+  fetchVideoRecs: (uid: string, courseId: string) => Promise<CourseYouTubeRecs | null>;
+  updateVideoRecs: (uid: string, courseId: string, videos: YouTubeVideo[]) => Promise<void>;
+
   clearProfile: () => void;
 }
 
@@ -232,23 +233,37 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ showPlanReadyToast: show });
   },
 
-  // --- NOVA FUNÇÃO PARA CACHE DE VÍDEOS ---
-  updateVideoRecs: async (uid: string, videos: YouTubeVideo[]) => {
+  // --- AÇÕES PARA RECOMENDAÇÕES DE VÍDEO (POR CURSO) ---
+  fetchVideoRecs: async (uid: string, courseId: string): Promise<CourseYouTubeRecs | null> => {
+    try {
+      // Caminho da nova arquitetura: users/{uid}/youtube/{courseId}
+      const docRef = doc(db, 'users', uid, 'youtube', courseId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return docSnap.data() as CourseYouTubeRecs;
+      }
+      return null;
+    } catch (error) {
+      console.error(`Erro ao buscar recomendações do curso ${courseId}:`, error);
+      return null;
+    }
+  },
+
+  updateVideoRecs: async (uid: string, courseId: string, videos: YouTubeVideo[]) => {
     const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
-    const newRecs = {
-      videoRecommendations: videos,
-      videoRecsLastUpdated: today
+
+    const newRecs: CourseYouTubeRecs = {
+      videos: videos,
+      lastUpdated: today
     };
 
-    set(state => ({
-      profile: state.profile ? { ...state.profile, ...newRecs } : null
-    }));
-
     try {
-      const docRef = doc(db, 'users', uid);
-      await updateDoc(docRef, newRecs);
+      // Salva na raiz do documento de subcoleção
+      const docRef = doc(db, 'users', uid, 'youtube', courseId);
+      await setDoc(docRef, newRecs, { merge: true });
     } catch (error) {
-      console.error("Erro ao salvar recomendações de vídeo:", error);
+      console.error(`Erro ao salvar recomendações de vídeo pro curso ${courseId}:`, error);
     }
   },
 

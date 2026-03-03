@@ -8,14 +8,14 @@ function formatDate(date: Date): string {
 
 
 // --- NOVA FUNÇÃO: Recomendações do YouTube (Carrossel) ---
-export const getYoutubeRecommendations = async (focusArea: string, nextTopic: string): Promise<YouTubeVideo[]> => {
+export const getYoutubeRecommendations = async (focusArea: string, nextTopic: string, courseId?: string, moduleTitle?: string): Promise<YouTubeVideo[]> => {
   try {
     const response = await fetch('/api/gemini/youtube-recs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ focusArea, nextTopic }),
+      body: JSON.stringify({ focusArea, nextTopic, courseId, moduleTitle }),
     });
 
     if (!response.ok) {

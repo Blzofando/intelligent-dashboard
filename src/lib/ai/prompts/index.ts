@@ -12,9 +12,8 @@ import { CoursePrompts } from './types';
 export const coursePromptsMap: Record<string, CoursePrompts> = {
     'power-bi': powerBiPrompts,
     'lic': licitacaoPrompts,
-    'licitacao': licitacaoPrompts,
-    'html-css': htmlCssPrompts,
-    'html': htmlPrompts,
+    'css-course': htmlCssPrompts,
+    'html-course': htmlPrompts,
 };
 
 /**
