@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/config/firebaseConfig';
 import { useAuthStore } from '@/store/authStore';
 
 const LoginPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true); 
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     // Redireciona se já estiver logado (o PrivateRoute fará isso, mas é uma garantia)
     if (!isLoadingAuth && user) {
-      router.push('/'); 
+      router.push('/');
     }
   }, [user, isLoadingAuth, router]);
 
@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
       setError('Erro ao logar com o Google.');
     }
   };
-  
+
   if (isLoadingAuth || user) { // Se estiver carregando OU já logado, mostre o spinner
     return (
       <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
@@ -65,14 +65,14 @@ const LoginPage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
         <h1 className="mb-6 text-center text-3xl font-bold text-primary-600 dark:text-primary-400">
           <i className="fas fa-brain mr-2"></i>LearnAI
         </h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -111,6 +111,17 @@ const LoginPage: React.FC = () => {
           >
             {isLogin ? 'Entrar' : 'Cadastrar'}
           </button>
+
+          {isLogin && (
+            <div className="text-right mt-2">
+              <a
+                href="/forgot-password"
+                className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+              >
+                Esqueceu a senha?
+              </a>
+            </div>
+          )}
         </form>
 
         <div className="my-4 flex items-center justify-center">
