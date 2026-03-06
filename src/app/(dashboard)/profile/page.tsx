@@ -41,6 +41,7 @@ const ProfilePage: React.FC = () => {
     useState<UserProfile["gender"]>("prefiro-nao-dizer");
   const [avatarPath, setAvatarPath] = useState("");
   const [focusArea, setFocusArea] = useState(""); // <-- ADICIONADO
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -220,6 +221,18 @@ const ProfilePage: React.FC = () => {
       <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
         Meu Perfil
       </h1>
+
+      {message.text && (
+        <div
+          className={`p-4 rounded-lg mb-2 text-sm font-semibold ${
+            message.type === "error"
+              ? "bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+              : "bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
 
       {/* --- ESTATÍSTICAS --- */}
       <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
