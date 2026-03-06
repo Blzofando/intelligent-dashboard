@@ -9,23 +9,33 @@ export const courseData: Course = {
   thumbnail: "/courses/html&css.png",
   categories: [
     {
-      name: "Todos os Módulos",
+      name: "HTML & Fundamentos",
       moduleIds: [
         "html-Module-1",
         "html-Module-2",
         "html-Module-3",
-        "html-Module-4",
         "html-Module-5",
+        "html-Module-8",
+      ],
+    },
+    {
+      name: "CSS & Estilização",
+      moduleIds: [
+        "html-Module-4",
         "html-Module-6",
         "html-Module-7",
-        "html-Module-8",
         "html-Module-9",
-        "html-Module-10",
         "html-Module-11",
-        "html-Module-12",
         "html-Module-13",
         "html-Module-14",
         "html-Module-15",
+      ],
+    },
+    {
+      name: "Frameworks & Prática",
+      moduleIds: [
+        "html-Module-10",
+        "html-Module-12",
         "html-Module-18",
         "html-Module-19",
         "html-Module-21",

@@ -1,19 +1,19 @@
 // src/lib/ai/prompts/index.ts
-import { powerBiPrompts } from './power-bi';
-import { licitacaoPrompts } from './licitacao';
-import { htmlPrompts } from './html';
-import { htmlCssPrompts } from './htmlCss';
-import { CoursePrompts } from './types';
+import { powerBiPrompts } from "./power-bi";
+import { licitacaoPrompts } from "./licitacao";
+import { htmlPrompts } from "./html";
+import { htmlCssPrompts } from "./htmlCss";
+import { CoursePrompts } from "./types";
 
 /**
  * Mapa de prompts por ID do curso
  * Facilita a busca dinâmica baseada no courseId
  */
 export const coursePromptsMap: Record<string, CoursePrompts> = {
-    'power-bi': powerBiPrompts,
-    'lic': licitacaoPrompts,
-    'css-course': htmlCssPrompts,
-    'html-course': htmlPrompts,
+  "power-bi": powerBiPrompts,
+  lic: licitacaoPrompts,
+  css: htmlCssPrompts, // <--- Modificado de 'css-course' para 'css' (Slug GERAL usado nas rotas)
+  html: htmlPrompts, // <--- Modificado de 'html-course' para 'html' (Slug GERAL usado nas rotas)
 };
 
 /**
@@ -22,19 +22,21 @@ export const coursePromptsMap: Record<string, CoursePrompts> = {
  * @returns Prompts do curso ou prompts do Power BI como fallback
  */
 export function getCoursePrompts(courseId: string): CoursePrompts {
-    const prompts = coursePromptsMap[courseId];
+  const prompts = coursePromptsMap[courseId];
 
-    if (!prompts) {
-        console.warn(`⚠️ Prompts não encontrados para curso "${courseId}". Usando Power BI como fallback.`);
-        return powerBiPrompts;
-    }
+  if (!prompts) {
+    console.warn(
+      `⚠️ Prompts não encontrados para curso "${courseId}". Usando Power BI como fallback.`,
+    );
+    return powerBiPrompts;
+  }
 
-    return prompts;
+  return prompts;
 }
 
 // Exportar os prompts individuais para uso direto se necessário
-export { powerBiPrompts } from './power-bi';
-export { licitacaoPrompts } from './licitacao';
-export { htmlPrompts } from './html';
-export { htmlCssPrompts } from './htmlCss';
-export type { CoursePrompts, CourseMetadata } from './types';
+export { powerBiPrompts } from "./power-bi";
+export { licitacaoPrompts } from "./licitacao";
+export { htmlPrompts } from "./html";
+export { htmlCssPrompts } from "./htmlCss";
+export type { CoursePrompts, CourseMetadata } from "./types";

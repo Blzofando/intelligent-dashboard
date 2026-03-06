@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useCourseContext } from '@/context/CourseProvider';
-import VideoPlayer from '@/components/VideoPlayer';
-import { CheckCircle, BookOpen, ChevronRight, ChevronLeft, Download, Sparkles, PlayCircle } from 'lucide-react';
-import { Lesson, Module } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { clsx } from 'clsx';
+import React, { useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCourseContext } from "@/context/CourseProvider";
+import VideoPlayer from "@/components/VideoPlayer";
+import {
+  CheckCircle,
+  BookOpen,
+  ChevronRight,
+  ChevronLeft,
+  Download,
+  Sparkles,
+  PlayCircle,
+} from "lucide-react";
+import { Lesson, Module } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
+import { clsx } from "clsx";
 
 type FlatLesson = Lesson & { moduleId: string; moduleTitle: string };
 
@@ -18,33 +26,50 @@ const LessonPlayerPage: React.FC = () => {
   const lessonId = params.lessonId as string;
   const courseId = params.courseId as string;
 
-  const { course, completedLessons, toggleLessonCompleted } = useCourseContext();
+  const { course, completedLessons, toggleLessonCompleted } =
+    useCourseContext();
 
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
 
   const { lesson, module, nextLesson, previousLesson } = useMemo(() => {
-    if (!course) return { lesson: null, module: null, nextLesson: null, previousLesson: null };
+    if (!course)
+      return {
+        lesson: null,
+        module: null,
+        nextLesson: null,
+        previousLesson: null,
+      };
 
-    const allLessons: FlatLesson[] = course.modules.flatMap(mod =>
-      mod.lessons.map(les => ({
+    const allLessons: FlatLesson[] = course.modules.flatMap((mod) =>
+      mod.lessons.map((les) => ({
         ...les,
         moduleId: mod.id,
-        moduleTitle: mod.title
-      }))
+        moduleTitle: mod.title,
+      })),
     );
-    const currentIndex = allLessons.findIndex(l => l.id === lessonId);
+    const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
     if (currentIndex === -1) {
-      return { lesson: null, module: null, nextLesson: null, previousLesson: null };
+      return {
+        lesson: null,
+        module: null,
+        nextLesson: null,
+        previousLesson: null,
+      };
     }
     const currentLesson = allLessons[currentIndex];
-    const currentModule = course.modules.find(m => m.id === currentLesson.moduleId);
+    const currentModule = course.modules.find(
+      (m) => m.id === currentLesson.moduleId,
+    );
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
-    const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+    const nextLesson =
+      currentIndex < allLessons.length - 1
+        ? allLessons[currentIndex + 1]
+        : null;
     return {
       lesson: currentLesson as Lesson,
       module: currentModule || null,
       nextLesson: nextLesson,
-      previousLesson: prevLesson
+      previousLesson: prevLesson,
     };
   }, [lessonId, course]);
 
@@ -71,7 +96,11 @@ const LessonPlayerPage: React.FC = () => {
   };
 
   if (!course) {
-    return <div className="p-8 text-center text-gray-600 dark:text-gray-300 animate-pulse">Carregando curso...</div>;
+    return (
+      <div className="p-8 text-center text-gray-600 dark:text-gray-300 animate-pulse">
+        Carregando curso...
+      </div>
+    );
   }
 
   if (!lesson || !module) {
@@ -93,7 +122,10 @@ const LessonPlayerPage: React.FC = () => {
     >
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 overflow-x-auto whitespace-nowrap pb-2">
-        <Link href={`/courses/${courseId}/modules`} className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+        <Link
+          href={`/courses/${courseId}/modules`}
+          className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+        >
           Módulos
         </Link>
         <ChevronRight className="w-4 h-4 shrink-0" />
@@ -104,7 +136,9 @@ const LessonPlayerPage: React.FC = () => {
           {module.title}
         </Link>
         <ChevronRight className="w-4 h-4 shrink-0" />
-        <span className="text-gray-800 dark:text-white font-medium truncate max-w-[200px] md:max-w-none">{lesson.title}</span>
+        <span className="text-gray-800 dark:text-white font-medium truncate max-w-[200px] md:max-w-none">
+          {lesson.title}
+        </span>
       </nav>
 
       {/* Cabeçalho da Aula */}
@@ -152,7 +186,7 @@ const LessonPlayerPage: React.FC = () => {
           {showCompletionMessage && (
             <motion.div
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
               className="overflow-hidden"
             >
@@ -160,7 +194,9 @@ const LessonPlayerPage: React.FC = () => {
                 <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full">
                   <Sparkles className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
-                <span className="font-semibold">Parabéns! Aula concluída com sucesso! 🎉</span>
+                <span className="font-semibold">
+                  Parabéns! Aula concluída com sucesso! 🎉
+                </span>
               </div>
             </motion.div>
           )}
@@ -178,6 +214,7 @@ const LessonPlayerPage: React.FC = () => {
           lessonId={lesson.id}
           lessonTitle={lesson.title}
           onComplete={handleComplete}
+          onNextLesson={nextLesson ? goToNextLesson : undefined}
         />
       </motion.div>
 
@@ -192,7 +229,9 @@ const LessonPlayerPage: React.FC = () => {
               <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Aula Anterior</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">
+                Aula Anterior
+              </p>
               <p className="font-semibold text-gray-800 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 {previousLesson.title}
               </p>
@@ -208,7 +247,9 @@ const LessonPlayerPage: React.FC = () => {
             className="group flex items-center justify-end gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-all hover:shadow-md text-right"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Próxima Aula</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">
+                Próxima Aula
+              </p>
               <p className="font-semibold text-gray-800 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 {nextLesson.title}
               </p>
@@ -222,7 +263,9 @@ const LessonPlayerPage: React.FC = () => {
             href={`/courses/${courseId}/modules`}
             className="group flex items-center justify-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
           >
-            <span className="font-bold text-green-700 dark:text-green-400">Voltar aos Módulos</span>
+            <span className="font-bold text-green-700 dark:text-green-400">
+              Voltar aos Módulos
+            </span>
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
           </Link>
         )}
@@ -251,8 +294,12 @@ const LessonPlayerPage: React.FC = () => {
                 <Download className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors">Baixar Materiais da Aula</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para fazer o download do arquivo (.zip)</p>
+                <p className="font-semibold text-gray-800 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors">
+                  Baixar Materiais da Aula
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Clique para fazer o download do arquivo (.zip)
+                </p>
               </div>
             </a>
           ) : (
@@ -261,8 +308,12 @@ const LessonPlayerPage: React.FC = () => {
                 <BookOpen className="w-6 h-6 text-gray-400 dark:text-gray-500" />
               </div>
               <div>
-                <p className="font-medium text-gray-600 dark:text-gray-300">Material de Apoio</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum material complementar disponível para esta aula.</p>
+                <p className="font-medium text-gray-600 dark:text-gray-300">
+                  Material de Apoio
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Nenhum material complementar disponível para esta aula.
+                </p>
               </div>
             </div>
           )}

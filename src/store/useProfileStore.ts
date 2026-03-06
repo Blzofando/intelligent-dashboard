@@ -1,11 +1,19 @@
-import { create } from 'zustand';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/config/firebaseConfig';
-import { UserProfile, StudyPlan, StudySettings, YouTubeVideo, StudyPlanDay, CoursePlan, CourseYouTubeRecs } from '@/types';
+import { create } from "zustand";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
+import {
+  UserProfile,
+  StudyPlan,
+  StudySettings,
+  YouTubeVideo,
+  StudyPlanDay,
+  CoursePlan,
+  CourseYouTubeRecs,
+} from "@/types";
 
 // --- Helper: Formatar Data ---
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 // Valores padrão
@@ -18,6 +26,7 @@ const defaultProfile: UserProfile = {
   completedLessons: [],
   lessonNotes: {},
   coursePlans: {}, // <-- ATUALIZADO: Inicializa vazio
+  youtubeRecs: {}, // Inicializa as recomendações vazias
   studyStreak: 0,
   lastStreakUpdate: null,
   lastDailyCheck: null,
@@ -30,21 +39,40 @@ interface ProfileState {
   isGeneratingPlan: boolean;
   showPlanReadyToast: boolean;
   fetchProfile: (uid: string) => Promise<void>;
-  updateProfile: (uid: string, newProfileData: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (
+    uid: string,
+    newProfileData: Partial<UserProfile>,
+  ) => Promise<void>;
 
   // Ações de progresso
-  toggleLessonCompleted: (uid: string, lessonId: string, courseId?: string) => Promise<void>; // <-- courseId opcional para streak
+  toggleLessonCompleted: (
+    uid: string,
+    lessonId: string,
+    courseId?: string,
+  ) => Promise<void>; // <-- courseId opcional para streak
   updateNote: (uid: string, itemId: string, text: string) => Promise<void>;
   resetProgress: (uid: string) => Promise<void>;
 
   // Ações do Plano
-  updateStudyPlan: (uid: string, courseId: string, settings: StudySettings, plan: StudyPlan) => Promise<void>; // <-- courseId adicionado
+  updateStudyPlan: (
+    uid: string,
+    courseId: string,
+    settings: StudySettings,
+    plan: StudyPlan,
+  ) => Promise<void>; // <-- courseId adicionado
   setGeneratingPlan: (status: boolean) => void;
   setShowPlanReadyToast: (show: boolean) => void;
 
   // --- Ações de Vídeo (POR CURSO) ---
-  fetchVideoRecs: (uid: string, courseId: string) => Promise<CourseYouTubeRecs | null>;
-  updateVideoRecs: (uid: string, courseId: string, videos: YouTubeVideo[]) => Promise<void>;
+  fetchVideoRecs: (
+    uid: string,
+    courseId: string,
+  ) => Promise<CourseYouTubeRecs | null>;
+  updateVideoRecs: (
+    uid: string,
+    courseId: string,
+    videos: YouTubeVideo[],
+  ) => Promise<void>;
 
   clearProfile: () => void;
 }
@@ -57,18 +85,18 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   fetchProfile: async (uid: string) => {
     set({ isLoadingProfile: true });
-    const docRef = doc(db, 'users', uid);
+    const docRef = doc(db, "users", uid);
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Migração simples: se não tiver coursePlans, inicializa
         const profileData = {
           ...defaultProfile,
           ...data,
           coursePlans: data.coursePlans || {},
+          youtubeRecs: data.youtubeRecs || {},
           lastDailyCheck: data.lastDailyCheck || null,
-          dailyCheckHistory: data.dailyCheckHistory || []
+          dailyCheckHistory: data.dailyCheckHistory || [],
         };
         set({ profile: profileData as UserProfile, isLoadingProfile: false });
       } else {
@@ -87,7 +115,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const updatedProfile = { ...currentProfile, ...newProfileData };
     set({ profile: updatedProfile });
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, "users", uid);
       await setDoc(docRef, newProfileData, { merge: true });
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
@@ -96,7 +124,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   // --- LÓGICA DE OFENSIVA ATUALIZADA ---
-  toggleLessonCompleted: async (uid: string, lessonId: string, courseId?: string) => {
+  toggleLessonCompleted: async (
+    uid: string,
+    lessonId: string,
+    courseId?: string,
+  ) => {
     const currentProfile = get().profile;
     if (!currentProfile) return;
 
@@ -119,11 +151,15 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     let todayInPlan: StudyPlanDay | undefined;
 
     if (courseId && currentProfile.coursePlans[courseId]) {
-      todayInPlan = currentProfile.coursePlans[courseId].plan.plan.find(day => day.date === today);
+      todayInPlan = currentProfile.coursePlans[courseId].plan.plan.find(
+        (day) => day.date === today,
+      );
     } else {
       // Procura em qualquer plano se tem aula hoje
       for (const planKey in currentProfile.coursePlans) {
-        const day = currentProfile.coursePlans[planKey].plan.plan.find(d => d.date === today);
+        const day = currentProfile.coursePlans[planKey].plan.plan.find(
+          (d) => d.date === today,
+        );
         if (day && day.lessons.length > 0) {
           todayInPlan = day;
           break; // Achou um plano com aula hoje
@@ -133,11 +169,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     // Só roda a lógica de streak se o usuário marcou como COMPLETO
     // e se o dia de hoje tem aulas planejadas
-    if (newCompleted.has(lessonId) && todayInPlan && todayInPlan.lessons.length > 0) {
-
+    if (
+      newCompleted.has(lessonId) &&
+      todayInPlan &&
+      todayInPlan.lessons.length > 0
+    ) {
       // Verifica se TODAS as aulas de hoje (daquele plano encontrado) estão completas
-      const allTodayLessonsDone = todayInPlan.lessons.every(lesson =>
-        newCompleted.has(lesson.id)
+      const allTodayLessonsDone = todayInPlan.lessons.every((lesson) =>
+        newCompleted.has(lesson.id),
       );
 
       // Se todas estão feitas E a ofensiva ainda não foi contada hoje...
@@ -153,17 +192,17 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         ...currentProfile,
         completedLessons: newCompletedArray,
         studyStreak: newStreak,
-        lastStreakUpdate: newLastStreakUpdate
-      }
+        lastStreakUpdate: newLastStreakUpdate,
+      },
     });
 
     // 4. Salva no Firebase
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, "users", uid);
       await updateDoc(docRef, {
         completedLessons: newCompletedArray,
         studyStreak: newStreak,
-        lastStreakUpdate: newLastStreakUpdate
+        lastStreakUpdate: newLastStreakUpdate,
       });
     } catch (error) {
       console.error("Erro ao salvar progresso/streak:", error);
@@ -177,7 +216,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const newNotes = { ...currentProfile.lessonNotes, [itemId]: text };
     set({ profile: { ...currentProfile, lessonNotes: newNotes } });
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, "users", uid);
       await updateDoc(docRef, { lessonNotes: newNotes });
     } catch (error) {
       console.error("Erro ao salvar nota:", error);
@@ -189,12 +228,18 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     if (!currentProfile) return;
     const newCompletedArray: string[] = [];
     const newNotes = {};
-    set({ profile: { ...currentProfile, completedLessons: newCompletedArray, lessonNotes: newNotes } });
+    set({
+      profile: {
+        ...currentProfile,
+        completedLessons: newCompletedArray,
+        lessonNotes: newNotes,
+      },
+    });
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, "users", uid);
       await updateDoc(docRef, {
         completedLessons: newCompletedArray,
-        lessonNotes: newNotes
+        lessonNotes: newNotes,
       });
     } catch (error) {
       console.error("Erro ao resetar progresso:", error);
@@ -202,22 +247,27 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  updateStudyPlan: async (uid: string, courseId: string, settings: StudySettings, plan: StudyPlan) => {
+  updateStudyPlan: async (
+    uid: string,
+    courseId: string,
+    settings: StudySettings,
+    plan: StudyPlan,
+  ) => {
     const currentProfile = get().profile;
     if (!currentProfile) return;
 
     const newCoursePlans = {
       ...currentProfile.coursePlans,
-      [courseId]: { settings, plan }
+      [courseId]: { settings, plan },
     };
 
     const updatedProfile = { ...currentProfile, coursePlans: newCoursePlans };
     set({ profile: updatedProfile });
 
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, "users", uid);
       await updateDoc(docRef, {
-        coursePlans: newCoursePlans
+        coursePlans: newCoursePlans,
       });
     } catch (error) {
       console.error("Erro ao salvar plano de estudos:", error);
@@ -234,36 +284,78 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   // --- AÇÕES PARA RECOMENDAÇÕES DE VÍDEO (POR CURSO) ---
-  fetchVideoRecs: async (uid: string, courseId: string): Promise<CourseYouTubeRecs | null> => {
+  fetchVideoRecs: async (
+    uid: string,
+    courseId: string,
+  ): Promise<CourseYouTubeRecs | null> => {
+    // Agora usando a store e documento principal localmente salvo
+    const profile = get().profile;
+
+    // Fallback: se o perfil já tiver youtubeRecs local, retorna.
+    if (profile?.youtubeRecs?.[courseId]) {
+      return profile.youtubeRecs[courseId];
+    }
+
+    // Se não tiver local (ou não desceu na sync), busca diretamente do user doc
     try {
-      // Caminho da nova arquitetura: users/{uid}/youtube/{courseId}
-      const docRef = doc(db, 'users', uid, 'youtube', courseId);
+      const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        return docSnap.data() as CourseYouTubeRecs;
+        const data = docSnap.data();
+        if (data.youtubeRecs && data.youtubeRecs[courseId]) {
+          return data.youtubeRecs[courseId] as CourseYouTubeRecs;
+        }
       }
       return null;
     } catch (error) {
-      console.error(`Erro ao buscar recomendações do curso ${courseId}:`, error);
+      console.error(
+        `Erro ao buscar recomendações do curso ${courseId}:`,
+        error,
+      );
       return null;
     }
   },
 
-  updateVideoRecs: async (uid: string, courseId: string, videos: YouTubeVideo[]) => {
-    const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+  updateVideoRecs: async (
+    uid: string,
+    courseId: string,
+    videos: YouTubeVideo[],
+  ) => {
+    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const currentProfile = get().profile;
+    if (!currentProfile) return;
 
     const newRecs: CourseYouTubeRecs = {
       videos: videos,
-      lastUpdated: today
+      lastUpdated: today,
     };
 
+    const newYoutubeRecs = {
+      ...(currentProfile.youtubeRecs || {}),
+      [courseId]: newRecs,
+    };
+
+    // Atualiza estado local primeiro
+    set({
+      profile: {
+        ...currentProfile,
+        youtubeRecs: newYoutubeRecs,
+      },
+    });
+
     try {
-      // Salva na raiz do documento de subcoleção
-      const docRef = doc(db, 'users', uid, 'youtube', courseId);
-      await setDoc(docRef, newRecs, { merge: true });
+      // Salva na raiz do documento principal (evita regras de subcoleção bloqueando)
+      const docRef = doc(db, "users", uid);
+      // Aqui usamos updateDoc em vez de setDoc(merge) por perfomance na key "youtubeRecs"
+      await updateDoc(docRef, { youtubeRecs: newYoutubeRecs });
     } catch (error) {
-      console.error(`Erro ao salvar recomendações de vídeo pro curso ${courseId}:`, error);
+      console.error(
+        `Erro ao salvar recomendações de vídeo pro curso ${courseId}:`,
+        error,
+      );
+      // Reverte local em caso de erro
+      set({ profile: currentProfile });
     }
   },
 
@@ -272,7 +364,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       profile: null,
       isLoadingProfile: false,
       isGeneratingPlan: false,
-      showPlanReadyToast: false
+      showPlanReadyToast: false,
     });
-  }
+  },
 }));

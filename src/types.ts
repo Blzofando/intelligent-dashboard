@@ -1,8 +1,8 @@
 // --- TIPOS DO PLANO DE ESTUDOS ---
 export interface StudySettings {
-  mode: 'suave' | 'regular' | 'intensivo' | 'personalizado';
+  mode: "suave" | "regular" | "intensivo" | "personalizado";
   minutesPerDay: number;
-  daysOfWeek: ('seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom')[];
+  daysOfWeek: ("seg" | "ter" | "qua" | "qui" | "sex" | "sab" | "dom")[];
   focusArea: string;
   startDate: string;
   selectedCourses?: string[];
@@ -44,7 +44,7 @@ export interface UserProfile {
   displayName: string;
   birthDate: string;
   focusArea?: string;
-  gender: 'masculino' | 'feminino' | 'outros' | 'prefiro-nao-dizer';
+  gender: "masculino" | "feminino" | "outros" | "prefiro-nao-dizer";
   avatarPath: string;
   completedLessons: string[];
   lessonNotes: Record<string, string>;
@@ -60,12 +60,15 @@ export interface UserProfile {
   lastDailyCheck?: string | null; // "YYYY-MM-DD" da última verificação automática
   dailyCheckHistory?: DailyCheckResult[]; // Histórico das últimas verificações
   // --- FIM DA ATUALIZAÇÃO ---
+
+  // --- RECOMENDAÇÕES DO YOUTUBE (Cachê) ---
+  youtubeRecs?: Record<string, CourseYouTubeRecs>;
 }
 
 // --- RESULTADO DA VERIFICAÇÃO DIÁRIA ---
 export interface DailyCheckResult {
   date: string; // "YYYY-MM-DD"
-  checkType: 'penalty' | 'reward' | 'neutral'; // Tipo de verificação
+  checkType: "penalty" | "reward" | "neutral"; // Tipo de verificação
   courseId: string;
   missedLessons?: string[]; // IDs das aulas que ficaram pendentes
   advancedLessons?: string[]; // IDs das aulas feitas antecipadamente
@@ -95,7 +98,6 @@ export interface Module {
   title: string;
   lessons: Lesson[];
 }
-
 
 export interface Lesson {
   id: string;
