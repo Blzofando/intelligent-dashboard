@@ -10,10 +10,12 @@ import {
   generatePbixChallenge,
   generateQuiz,
 } from "@/services/geminiService";
+import { generateCssChallenge } from "@/services/geminiService";
 import { Flashcard, QuizQuestion } from "@/types";
 // IMPORT DO PbixQuiz (componente separado)
 import PbixQuiz from "@/components/PbixQuiz";
 import GenericQuiz from "@/components/GenericQuiz";
+import CssChallenge from "@/components/CssChallenge";
 
 const ModuleDetail: React.FC = () => {
   const params = useParams();
@@ -33,9 +35,11 @@ const ModuleDetail: React.FC = () => {
   // ESTADOS ATUALIZADOS
   const [showPbixQuiz, setShowPbixQuiz] = useState(false);
   const [showGenericQuiz, setShowGenericQuiz] = useState(false);
+  const [showCssChallenge, setShowCssChallenge] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [files, setFiles] = useState<any[]>([]); // Para os Excels (recebidos da API)
   const [tasks, setTasks] = useState<any[]>([]); // Para as Tarefas (com ajuda e gabarito)
+  const [cssChallengeData, setCssChallengeData] = useState<any>(null); // Dados do desafio CSS
 
   const module = useMemo(
     () => course?.modules.find((m) => m.id === moduleId),
@@ -55,6 +59,7 @@ const ModuleDetail: React.FC = () => {
   const handleGenerateSummary = async () => {
     if (!module) return;
     setShowPbixQuiz(false);
+    setShowCssChallenge(false);
     setFiles([]);
     setTasks([]);
     setIsLoading((prev) => ({ ...prev, summary: true }));
@@ -76,11 +81,13 @@ const ModuleDetail: React.FC = () => {
     setFlashcards([]);
     setShowPbixQuiz(false);
     setShowGenericQuiz(false);
+    setShowCssChallenge(false);
     setQuizQuestions([]);
     setIsLoading((prev) => ({ ...prev, quiz: true }));
 
     const lessonTitles = module.lessons.map((l) => l.title);
     try {
+      // 1. Course specific routing
       if (courseId === "power-bi") {
         const result = await generatePbixChallenge(module.title, lessonTitles);
         console.log("Resultado da API (PBI):", result);
@@ -95,6 +102,23 @@ const ModuleDetail: React.FC = () => {
         } else {
           console.error(
             "Erro: A API não retornou o JSON de desafio esperado.",
+            result,
+          );
+        }
+      } else if (courseId === "css" || courseId === "html") {
+        // Desafio Prático Baseado em Cenários para Web Dev
+        const result = await generateCssChallenge(
+          module.title,
+          lessonTitles,
+          courseId,
+        );
+        console.log("Resultado da API (CSS Challenge):", result);
+        if (result && result.historia_contexto && result.gabarito_codigo) {
+          setCssChallengeData(result);
+          setShowCssChallenge(true);
+        } else {
+          console.error(
+            "Erro: A API não retornou o JSON do desafio CSS esperado.",
             result,
           );
         }
@@ -121,6 +145,7 @@ const ModuleDetail: React.FC = () => {
   const handleGenerateFlashcards = async () => {
     if (!module) return;
     setShowPbixQuiz(false);
+    setShowCssChallenge(false);
     setFiles([]);
     setTasks([]);
     setIsLoading((prev) => ({ ...prev, flashcards: true }));
@@ -303,6 +328,17 @@ const ModuleDetail: React.FC = () => {
           {showPbixQuiz && (
             <div className="p-4 bg-gray-900 rounded-xl shadow-lg mt-6">
               <PbixQuiz tasks={tasks} files={files} />
+            </div>
+          )}
+
+          {/* ATIVIDADE PRÁTICA CSS / HTML */}
+          {showCssChallenge && cssChallengeData && (
+            <div className="p-4 bg-gray-900 rounded-xl shadow-lg mt-6">
+              <CssChallenge
+                challenge={cssChallengeData}
+                courseId={courseId}
+                moduleTitle={module.title}
+              />
             </div>
           )}
 

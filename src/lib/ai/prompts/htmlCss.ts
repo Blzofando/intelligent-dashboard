@@ -1,5 +1,5 @@
 // src/lib/ai/prompts/htmlCss.ts
-import { CoursePrompts } from './types';
+import { CoursePrompts } from "./types";
 
 /**
  * Todos os prompts específicos do curso de HTML & CSS
@@ -67,11 +67,14 @@ export const htmlCssPrompts: CoursePrompts = {
   },
 
   quiz: (moduleTitle: string, lessonTitles: string[]) => `
+    Para este curso, prefira gerar um desafio prático em vez de um quiz.
+    Use o prompt de challenge em vez de quiz.
+    Mas se precisar gerar um quiz, mantenha este formato:
     Aja como um Tech Recruiter ou Avaliador Técnico Front-end.
     Crie um quiz com 3 perguntas de múltipla escolha sobre o módulo "${moduleTitle}", 
     baseando-se nos tópicos ensinados: ${lessonTitles.join(", ")}.
     
-    Formato EXATO do JSON esperado (retorne APENAS o JSON, sem marcações markdown):
+    Formato EXATO do JSON esperado:
     [
         {
             "question": "Situação prática ou problema comum focando em HTML/CSS?",
@@ -79,12 +82,55 @@ export const htmlCssPrompts: CoursePrompts = {
             "correctAnswer": "O texto exato da Opção correta"
         }
     ]
+  `,
+
+  challenge: (
+    moduleTitle: string,
+    lessonTitles: string[],
+    context?: string,
+  ) => `
+    Atue como um Professor Sênior de Desenvolvimento Web com profundo domínio técnico e didático.
+    Vamos criar um Desafio Prático Baseado em Cenários para o módulo "${moduleTitle}".
+    O desafio deve explorar os conceitos ensinados nas aulas: ${lessonTitles.join(", ")}.
+
+    Regras para a Geração do Desafio:
+    1. Nivelamento Adequado: O desafio deve focar ESTRITAMENTE no nível atual do módulo e ser fácil de entender para um iniciante. Não crie gabaritos complexos demais! Um código simples, direto e funcional é preferível.
+       Histórico do aluno: ${context || "Baseado estritamente nas aulas atuais."}
+    2. Contexto Prático: Apresente o desafio imerso em uma situação real ou história fictícia (Ex: "Você foi contratado para criar a navegação do site de uma cafeteria").
+    3. Instruções em Lista: Forneça um array com passo-a-passo detalhando exatamente o que o aluno deve programar.
+    4. Ativos Padronizados (Assets): Forneça dados obrigatórios separados com titulo e valor (Apenas se precisar de textos específicos, links de imagens, paletas de cores. Se não, retorne vazio []).
     
-    Requisitos:
-    - 3 perguntas desafiadoras mas adequadas ao nível do módulo.
-    - Crie cenários reais (ex: "Ao precisar centralizar uma div", ou "Para garantir acessibilidade na imagem...").
-    - Apenas uma resposta é 100% correta segundo as especificações do W3C/MDN.
-    - Evite decoreba inútil; teste o raciocínio aplicado do desenvolvedor.
+    O que você deve gerar (Saída Esperada em JSON puro, sem markdown):
+    {
+      "historia_contexto": "A história de fundo ou briefing sobre o cenário.",
+      "instrucoes": [
+         "Dica: Instale a extensão Live Server.",
+         "Crie o arquivo index.html na raiz.",
+         "Configure a estrutura padrão HTML5."
+      ],
+      "textos_padronizados": [
+         { "titulo": "Título Principal da Tela", "valor": "Café Tech" },
+         { "titulo": "Cor de Fundo (Hex)", "valor": "#f4f4f4" }
+      ],
+      "arquivos_base": [
+        {
+          "nome": "index.html",
+          "conteudo": "<!DOCTYPE html>..."
+        }
+      ],
+      "gabarito_codigo": [
+        {
+          "nome": "index.html",
+          "conteudo": "Solução com o HTML."
+        },
+        {
+          "nome": "style.css",
+          "conteudo": "Solução com o CSS."
+        }
+      ]
+    }
+
+    Nota: 'arquivos_base' pode conter o código inicial. Se eles devem começar do zero, providencie arquivos vazios ou a estrutura básica HTML5. 'gabarito_codigo' deve conter a solução perfeita e completa. Retorne apenas o JSON.
   `,
 
   chat: (context: string, userMessage: string) => `

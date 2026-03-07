@@ -213,3 +213,30 @@ export async function generatePbixChallenge(
 
   return await response.json();
 }
+
+// --- API do CSS Challenge ---
+export const generateCssChallenge = async (
+  moduleTitle: string,
+  lessonTitles: string[],
+  courseId?: string,
+  context?: string,
+) => {
+  try {
+    const response = await fetch("/api/gemini/css-challenge", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ moduleTitle, lessonTitles, courseId, context }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Erro na resposta da API de css-challenge");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Erro ao chamar a API de css-challenge:", error);
+    return null;
+  }
+};
