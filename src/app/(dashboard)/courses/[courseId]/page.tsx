@@ -151,30 +151,30 @@ const Dashboard: React.FC = () => {
   ];
 
   // --- MUDANÇA: LÓGICA POR CURSO USANDO FIREBASE (CourseYouTubeRecs) ---
+  const hasFetchedRecs = React.useRef(false);
+
   useEffect(() => {
     const fetchYoutubeRecommendations = async () => {
-      // Precisamos do perfil, do plano do curso (pra pegar o focusArea) e da próxima aula
-      if (!profile || !nextLesson || !user) {
-        setIsLoadingYoutubeVideos(false);
+      // Precisamos do user e da próxima aula para prosseguir
+      if (!user || !nextLesson || !course?.id) {
         return;
       }
 
-      const coursePlan = profile.coursePlans[course.id];
-      const focus =
-        coursePlan?.settings.focusArea ||
-        profile.focusArea ||
-        "Sem foco definido";
-      const module = nextLesson.moduleTitle;
+      // Se já estamos carregando ou já carregamos nesta sessão do componente, evita duplicidade
+      if (hasFetchedRecs.current) return;
+      
+      const currentProfile = useProfileStore.getState().profile;
+      if (!currentProfile) return;
 
+      hasFetchedRecs.current = true;
       setIsLoadingYoutubeVideos(true);
 
       try {
-        // 1. Tentar ler do Firebase (subcoleção 'youtube')
+        // 1. Tentar ler do Firebase (ou cache local da store)
         const cachedData = await useProfileStore
           .getState()
           .fetchVideoRecs(user.uid, course.id);
 
-        // Vamos usar 7 dias como limite de staleness
         const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
         let isStale = true;
 
@@ -184,20 +184,26 @@ const Dashboard: React.FC = () => {
         }
 
         if (cachedData && !isStale && cachedData.videos.length > 0) {
-          setYoutubeVideos(cachedData.videos); // Usa o que está no Firestore
+          setYoutubeVideos(cachedData.videos);
           setIsLoadingYoutubeVideos(false);
-          return; // Para aqui, não busca na API
+          return;
         }
 
         // 2. Se não existe ou está velho, buscar na API Gemini
+        const coursePlan = currentProfile.coursePlans[course.id];
+        const focus =
+          coursePlan?.settings.focusArea ||
+          currentProfile.focusArea ||
+          "Sem foco definido";
+
         const response = await fetch("/api/gemini/youtube-recs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             focusArea: focus,
             nextTopic: nextLesson.title,
-            moduleTitle: module,
-            courseId: course.slug, // <--- Mudado para slug para casar perfeitamente com o coursePromptsMap (ex: 'css')
+            moduleTitle: nextLesson.moduleTitle,
+            courseId: course.slug,
           }),
         });
 
@@ -206,20 +212,21 @@ const Dashboard: React.FC = () => {
         const videos: YouTubeVideo[] = await response.json();
         setYoutubeVideos(videos);
 
-        // 3. Salvar os novos resultados na subcoleção via Zustand store
+        // 3. Salvar os novos resultados na store/Firebase
         await useProfileStore
           .getState()
           .updateVideoRecs(user.uid, course.id, videos);
       } catch (error) {
         console.error("Erro recs youtube:", error);
-        setYoutubeVideos([]); // Define como vazio em caso de erro
+        setYoutubeVideos([]);
+        hasFetchedRecs.current = false; // Permite tentar novamente em caso de erro
       } finally {
         setIsLoadingYoutubeVideos(false);
       }
     };
 
     fetchYoutubeRecommendations();
-  }, [profile, nextLesson, course.id]);
+  }, [user?.uid, nextLesson?.id, course?.id]);
   // --- FIM DA MUDANÇA ---
 
   const handleSelectVideo = (embedUrl: string | null) => {

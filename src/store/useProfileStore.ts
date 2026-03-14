@@ -95,6 +95,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           ...data,
           coursePlans: data.coursePlans || {},
           youtubeRecs: data.youtubeRecs || {},
+          studyStreak: data.studyStreak || 0,
+          lastStreakUpdate: data.lastStreakUpdate || null,
           lastDailyCheck: data.lastDailyCheck || null,
           dailyCheckHistory: data.dailyCheckHistory || [],
         };
