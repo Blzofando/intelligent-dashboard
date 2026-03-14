@@ -63,6 +63,9 @@ export interface UserProfile {
 
   // --- RECOMENDAÇÕES DO YOUTUBE (Cachê) ---
   youtubeRecs?: Record<string, CourseYouTubeRecs>;
+
+  // --- CONTROLE DE ACESSO (Regra Global #3) ---
+  approved: boolean;
 }
 
 // --- RESULTADO DA VERIFICAÇÃO DIÁRIA ---

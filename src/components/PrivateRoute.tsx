@@ -40,10 +40,18 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // 3. Se HÁ usuário E o perfil está COMPLETO
-    if (user && isProfileComplete) {
-      // Se ele estiver tentando acessar /login ou /welcome, mande-o para o dashboard
-      if (pathname === '/login' || pathname === '/welcome') {
+    // 2.5 Se HÁ usuário e perfil COMPLETO, mas NÃO está APROVADO (Regra Global #3)
+    if (user && isProfileComplete && !profile?.approved) {
+      if (pathname !== '/waiting-approval') {
+        router.push('/waiting-approval');
+      }
+      return;
+    }
+
+    // 3. Se HÁ usuário E o perfil está COMPLETO E APROVADO
+    if (user && isProfileComplete && profile?.approved) {
+      // Se ele estiver tentando acessar /login ou /welcome ou /waiting-approval, mande-o para o dashboard
+      if (pathname === '/login' || pathname === '/welcome' || pathname === '/waiting-approval') {
         router.push('/');
       }
       return;

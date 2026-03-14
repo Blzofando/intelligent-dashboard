@@ -31,6 +31,7 @@ const defaultProfile: UserProfile = {
   lastStreakUpdate: null,
   lastDailyCheck: null,
   dailyCheckHistory: [],
+  approved: false,
 };
 
 interface ProfileState {
@@ -99,6 +100,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           lastStreakUpdate: data.lastStreakUpdate || null,
           lastDailyCheck: data.lastDailyCheck || null,
           dailyCheckHistory: data.dailyCheckHistory || [],
+          approved: data.approved ?? false,
         };
         set({ profile: profileData as UserProfile, isLoadingProfile: false });
       } else {
