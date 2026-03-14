@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { signOut } from 'firebase/auth';
@@ -9,6 +10,15 @@ import { LogOut, Clock, Brain } from 'lucide-react';
 
 const WaitingApprovalPage = () => {
   const { clearProfile } = useProfileStore();
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  // Redireciona para o login se o usuário deslogar
+  React.useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
 
   const handleLogout = async () => {
     try {
