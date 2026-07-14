@@ -4,7 +4,7 @@ export const influencerMilionarioCourse: Course = {
     id: "ytb-course",
     slug: "ytb",
     title: "Influencer Milionário Legacy - Tio Sam",
-    description: "Descrição automática gerada pelo script.",
+    description: "Aprenda a construir e escalar canais no YouTube do absoluto zero ao avançado. Domine o algoritmo, técnicas de roteiros virais, edição avançada e estratégias de Canais Dark e Gringos para gerar receita recorrente de qualquer lugar do mundo.",
     thumbnail: "/courses/ytb.jpg",
     categories: [
         { 

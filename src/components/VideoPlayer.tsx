@@ -305,6 +305,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
+      {/* Botão Pular Abertura (Exclusivo para o curso ytb e visível apenas nos primeiros 25 segundos) */}
+      {lessonId.startsWith("ytb-") && currentTime < 25 && (
+        <div
+          className={`absolute right-4 bottom-20 z-40 transition-opacity duration-300 ${
+            showControls
+              ? "opacity-100 pointer-events-auto translate-y-0"
+              : "opacity-0 pointer-events-none translate-y-2"
+          }`}
+        >
+          <button
+            onClick={() => {
+              const video = videoRef.current;
+              if (video) {
+                video.currentTime = 25;
+              }
+            }}
+            className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black rounded-xl shadow-lg shadow-black/50 font-bold tracking-wide transition-all hover:scale-105 active:scale-95 border border-yellow-400/20"
+          >
+            Pular Abertura (25s)
+            <FastForward className="w-4 h-4 fill-current" />
+          </button>
+        </div>
+      )}
+
       {/* Overlay de Loading */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/75 pointer-events-none z-10">
