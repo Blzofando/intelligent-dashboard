@@ -1,8 +1,8 @@
-// src/lib/ai/prompts/index.ts
 import { powerBiPrompts } from "./power-bi";
 import { licitacaoPrompts } from "./licitacao";
 import { htmlPrompts } from "./html";
 import { htmlCssPrompts } from "./htmlCss";
+import { ytbPrompts } from "./ytb";
 import { CoursePrompts } from "./types";
 
 /**
@@ -14,6 +14,8 @@ export const coursePromptsMap: Record<string, CoursePrompts> = {
   lic: licitacaoPrompts,
   css: htmlCssPrompts, // <--- Modificado de 'css-course' para 'css' (Slug GERAL usado nas rotas)
   html: htmlPrompts, // <--- Modificado de 'html-course' para 'html' (Slug GERAL usado nas rotas)
+  ytb: ytbPrompts,
+  "ytb-course": ytbPrompts,
 };
 
 /**
@@ -39,4 +41,5 @@ export { powerBiPrompts } from "./power-bi";
 export { licitacaoPrompts } from "./licitacao";
 export { htmlPrompts } from "./html";
 export { htmlCssPrompts } from "./htmlCss";
+export { ytbPrompts } from "./ytb";
 export type { CoursePrompts, CourseMetadata } from "./types";
