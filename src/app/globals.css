@@ -223,3 +223,32 @@ body {
 .card-hover {
   @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary-500/10;
 }
+
+/* Ocultar scrollbars */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Correção do Calendário para Celulares Estreitos */
+@media (max-width: 400px) {
+  .react-calendar {
+    padding: 0.5rem !important;
+  }
+  .react-calendar__navigation button {
+    min-width: 32px !important;
+    height: 32px !important;
+    font-size: 0.875rem !important;
+  }
+  .react-calendar__month-view__weekdays {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .react-calendar__month-view__days__day {
+    padding: 0.25rem !important;
+    font-size: 0.75rem !important;
+  }
+}

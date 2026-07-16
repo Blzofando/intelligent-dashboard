@@ -73,16 +73,25 @@ export default function DashboardLayout({
           {/* Mobile Overlay - Escurece e desfoca o fundo quando o sidebar está aberto */}
           {isSidebarOpen && (
             <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden transition-all duration-300"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 lg:hidden transition-all duration-300"
               onClick={() => setIsSidebarOpen(false)}
               aria-hidden="true"
             />
           )}
 
           {/* Sidebar */}
-          <aside className={`fixed inset-y-0 left-0 z-30 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex md:flex-col glass-panel dark:glass-panel-dark m-4 rounded-2xl shadow-2xl md:shadow-none`}>
+          <aside className={`fixed inset-y-0 left-0 z-30 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:flex lg:flex-col glass-panel dark:glass-panel-dark h-full rounded-r-2xl m-0 shadow-2xl lg:m-4 lg:rounded-2xl lg:shadow-none`}>
 
-            <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex flex-col flex-1 overflow-hidden relative">
+
+              {/* Botão de Fechar no Mobile */}
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="absolute top-4 right-4 lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 rounded-lg transition-colors z-45"
+                aria-label="Close sidebar"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
 
               {/* Logo Header */}
               <div className="flex items-center justify-center h-24 border-b border-gray-200/20 dark:border-gray-700/30">
@@ -163,7 +172,7 @@ export default function DashboardLayout({
           <div className="flex-1 flex flex-col overflow-hidden">
             <header className="flex items-center justify-between h-20 px-8 bg-transparent z-10">
               <button
-                className="md:hidden p-2 text-gray-500 glass-panel rounded-lg"
+                className="lg:hidden p-2 text-gray-500 glass-panel rounded-lg"
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 aria-label="Open sidebar"
               >

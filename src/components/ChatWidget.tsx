@@ -45,10 +45,10 @@ const ChatWidget: React.FC = () => {
 
     return (
         <>
-            <div className="fixed bottom-8 right-8 z-40">
+            <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-16 h-16 bg-primary-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-primary-700 transition-transform transform hover:scale-110"
+                    className="w-14 h-14 sm:w-16 sm:h-16 bg-primary-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:bg-primary-700 transition-transform transform hover:scale-110"
                     aria-label="Open AI Chat"
                 >
                     <i className="fas fa-robot"></i>
@@ -56,10 +56,10 @@ const ChatWidget: React.FC = () => {
             </div>
 
             {isOpen && (
-                <div className="fixed bottom-28 right-8 w-full max-w-md h-[60vh] bg-white dark:bg-gray-800 rounded-sm shadow-xl flex flex-col z-50 transition-all duration-300">
-                    <header className="p-4 bg-primary-600 text-white flex justify-between items-center rounded-t-lg">
+                <div className="fixed bottom-0 right-0 left-0 sm:left-auto sm:right-8 sm:bottom-28 w-full sm:max-w-md h-[75vh] sm:h-[60vh] bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-2xl flex flex-col z-50 transition-all duration-300 border border-gray-100 dark:border-gray-700/50">
+                    <header className="p-4 bg-primary-600 text-white flex justify-between items-center rounded-t-2xl sm:rounded-t-xl">
                         <h3 className="font-bold text-lg">Assistente IA do Curso</h3>
-                        <button onClick={() => setIsOpen(false)}>&times;</button>
+                        <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200 text-2xl font-bold leading-none p-1 transition-colors">&times;</button>
                     </header>
                     <div ref={chatBodyRef} className="flex-1 p-4 overflow-y-auto space-y-4">
                         {messages.map((msg, index) => (
@@ -84,11 +84,11 @@ const ChatWidget: React.FC = () => {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 placeholder="Pergunte sobre o curso..."
-                                className="flex-1 p-2 border rounded-l-sm dark:bg-gray-700 dark:border-gray-600 focus:outline-hidden focus:ring-3 focus:ring-primary-500"
+                                className="flex-1 p-2.5 border rounded-l-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-hidden focus:ring-3 focus:ring-primary-500 text-sm"
                                 disabled={isLoading}
                             />
-                            <button type="submit" className="bg-primary-600 text-white p-2 rounded-r-lg" disabled={isLoading}>
-                                <i className="fas fa-paper-plane"></i>
+                            <button type="submit" className="bg-primary-600 text-white p-2.5 rounded-r-lg flex items-center justify-center" disabled={isLoading}>
+                                <i className="fas fa-paper-plane text-sm"></i>
                             </button>
                         </div>
                     </form>

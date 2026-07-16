@@ -219,13 +219,29 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const toggleFullscreen = () => {
-    if (!containerRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
 
     if (document.fullscreenElement) {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     } else {
-      if (containerRef.current.requestFullscreen) {
-        containerRef.current.requestFullscreen();
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen().catch((err) => {
+          console.log("Erro ao entrar em fullscreen nativo no container:", err);
+          // @ts-ignore - webkitEnterFullscreen is non-standard but supported in iOS
+          if (video.webkitEnterFullscreen) {
+            // @ts-ignore
+            video.webkitEnterFullscreen();
+          }
+        });
+      } else {
+        // @ts-ignore
+        if (video.webkitEnterFullscreen) {
+          // @ts-ignore
+          video.webkitEnterFullscreen();
+        }
       }
     }
   };
@@ -308,7 +324,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Botão Pular Abertura (Exclusivo para o curso ytb e visível apenas nos primeiros 25 segundos) */}
       {lessonId.startsWith("ytb-") && currentTime < 25 && (
         <div
-          className={`absolute right-4 bottom-20 z-40 transition-opacity duration-300 ${
+          className={`absolute z-40 transition-opacity duration-300 right-4 top-4 sm:top-auto sm:bottom-20 ${
             showControls
               ? "opacity-100 pointer-events-auto translate-y-0"
               : "opacity-0 pointer-events-none translate-y-2"
@@ -321,10 +337,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 video.currentTime = 25;
               }
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black rounded-xl shadow-lg shadow-black/50 font-bold tracking-wide transition-all hover:scale-105 active:scale-95 border border-yellow-400/20"
+            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black rounded-xl shadow-lg shadow-black/50 font-bold tracking-wide transition-all hover:scale-105 active:scale-95 border border-yellow-400/20 text-xs sm:text-sm"
           >
-            Pular Abertura (25s)
-            <FastForward className="w-4 h-4 fill-current" />
+            <span className="hidden sm:inline">Pular Abertura (25s)</span>
+            <span className="sm:hidden">Pular (25s)</span>
+            <FastForward className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
           </button>
         </div>
       )}

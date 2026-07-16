@@ -287,9 +287,9 @@ const ProfilePage: React.FC = () => {
       {/* --- ATUALIZAR PERFIL (Firestore) --- */}
       <form
         onSubmit={handleProfileUpdate}
-        className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex flex-col gap-8"
+        className="bg-white dark:bg-gray-800 p-4 sm:p-8 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex flex-col gap-8"
       >
-        <div className="flex items-center justify-between border-b pb-4 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b pb-6 dark:border-gray-700 text-center md:text-left">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
               Informações Públicas
@@ -402,11 +402,11 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-between items-center mt-4">
+        <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 mt-6 w-full">
           <button
             type="button"
             onClick={() => setIsPasswordModalOpen(true)}
-            className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors w-full md:w-auto py-2.5 md:py-0 border border-gray-200 dark:border-gray-700 md:border-none rounded-xl md:rounded-none"
           >
             <KeyRound className="w-4 h-4" />
             Alterar Senha de Acesso
@@ -415,7 +415,7 @@ const ProfilePage: React.FC = () => {
           <button
             type="submit"
             disabled={!isProfileDirty || isProfileSaving}
-            className={`px-8 py-3 font-bold text-white rounded-xl shadow-lg transition-all ${
+            className={`px-8 py-3 font-bold text-white rounded-xl shadow-lg transition-all w-full md:w-auto justify-center flex ${
               isProfileDirty
                 ? "bg-primary-600 hover:bg-primary-500 hover:scale-105 hover:shadow-primary-500/25"
                 : "bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-70"

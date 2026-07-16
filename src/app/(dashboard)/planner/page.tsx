@@ -110,7 +110,7 @@ const PlannerPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-[fade-in_0.5s_ease-out]">
       {/* 1. AULAS DO DIA (Topo) */}
-      <div className="glass-panel dark:glass-panel-dark p-8 rounded-2xl shadow-lg relative overflow-hidden">
+      <div className="glass-panel dark:glass-panel-dark p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
@@ -157,14 +157,14 @@ const PlannerPage: React.FC = () => {
                       {lessons.map((lesson: any) => {
                         const isCompleted = completedLessons.has(lesson.id);
                         return (
-                          <li key={lesson.id} className={`flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 rounded-lg transition-all hover:shadow-sm ${isCompleted ? 'opacity-50' : ''}`}>
+                          <li key={lesson.id} className={`flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 rounded-lg transition-all hover:shadow-sm gap-4 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
                             <Link
                               href={`/courses/${courseUrlPart}/lesson/${lesson.id}`}
-                              className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors ${isCompleted ? 'line-through' : ''}`}
+                              className={`font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate flex-1 min-w-0 ${isCompleted ? 'line-through' : ''}`}
                             >
                               {lesson.title}
                             </Link>
-                            <span className={`text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 ${isCompleted ? 'line-through' : ''}`}>
+                            <span className={`text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 shrink-0 ${isCompleted ? 'line-through' : ''}`}>
                               <span className="w-2 h-2 rounded-full bg-secondary-400"></span>
                               {Math.round(lesson.duration / 60)} min
                             </span>
@@ -200,9 +200,9 @@ const PlannerPage: React.FC = () => {
       )}
       {/* --- FIM DO AVISO --- */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {/* 2. CALENDÁRIO (Esquerda) */}
-        <div className="lg:col-span-2 glass-panel dark:glass-panel-dark p-6 rounded-2xl shadow-lg">
+        <div className="lg:col-span-2 glass-panel dark:glass-panel-dark p-4 sm:p-6 rounded-2xl shadow-lg">
           <Calendar
             onChange={handleCalendarChange}
             value={selectedDate}
@@ -225,7 +225,7 @@ const PlannerPage: React.FC = () => {
 
         {/* 3. ESTATÍSTICAS (Direita) */}
         <div className="space-y-6">
-          <div className="glass-panel dark:glass-panel-dark p-6 rounded-2xl shadow-lg">
+          <div className="glass-panel dark:glass-panel-dark p-4 sm:p-6 rounded-2xl shadow-lg">
             <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2">
               <Target className="w-6 h-6 text-secondary-500" />
               Minhas Metas

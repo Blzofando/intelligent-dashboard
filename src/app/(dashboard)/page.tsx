@@ -49,7 +49,7 @@ export default function AllCoursesPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary-900/80 to-secondary-900/80 p-8 md:p-12 border border-white/10 shadow-2xl backdrop-blur-xl"
+        className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary-900/80 to-secondary-900/80 p-5 sm:p-8 md:p-12 border border-white/10 shadow-2xl backdrop-blur-xl"
       >
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-secondary-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
@@ -65,7 +65,7 @@ export default function AllCoursesPage() {
             <span>Painel Inteligente</span>
           </motion.div>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 min-h-14 md:min-h-16 px-1">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-4 min-h-[4rem] sm:min-h-[5rem] px-1">
             <span className="bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400">
               {typedText}
             </span>
@@ -84,7 +84,7 @@ export default function AllCoursesPage() {
       </motion.div>
 
       {/* Grid de Cursos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {courses.map((course, index) => {
           const progress = getCourseProgress(course.id, course.modules);
 

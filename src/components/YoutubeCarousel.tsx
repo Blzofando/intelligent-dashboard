@@ -18,7 +18,7 @@ const VideoCard: React.FC<{ video: YouTubeVideo, onClick: () => void }> = ({ vid
   <motion.div
     whileHover={{ scale: 1.05, y: -5 }}
     whileTap={{ scale: 0.98 }}
-    className="relative shrink-0 w-80 h-48 bg-gray-900 rounded-xl overflow-hidden shadow-lg cursor-pointer group snap-start border border-gray-800 hover:border-primary-500/50 transition-colors"
+    className="relative shrink-0 w-[280px] sm:w-80 h-44 sm:h-48 bg-gray-900 rounded-xl overflow-hidden shadow-lg cursor-pointer group snap-start border border-gray-800 hover:border-primary-500/50 transition-colors"
     onClick={onClick}
   >
     <Image
@@ -51,7 +51,8 @@ const YoutubeCarousel: React.FC<YoutubeCarouselProps> = ({ videos, isLoading, on
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 320 + 24;
+      const containerWidth = scrollContainerRef.current.clientWidth;
+      const scrollAmount = containerWidth * 0.75;
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
@@ -83,12 +84,12 @@ const YoutubeCarousel: React.FC<YoutubeCarouselProps> = ({ videos, isLoading, on
 
   return (
     <div className="relative group/carousel">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
           Recomendações Semanais
         </h2>
-        <span className="text-sm font-medium px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full border border-primary-200 dark:border-primary-800">
+        <span className="self-start sm:self-auto text-sm font-medium px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full border border-primary-200 dark:border-primary-800">
           Foco: {focusArea}
         </span>
       </div>

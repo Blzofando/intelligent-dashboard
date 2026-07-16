@@ -196,7 +196,7 @@ const ModuleDetail: React.FC = () => {
       </h1>
 
       {/* Bloco de Aulas */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">
           Aulas
         </h2>
@@ -232,7 +232,7 @@ const ModuleDetail: React.FC = () => {
       </div>
 
       {/* Bloco de Anotações */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">
           Anotações do Módulo
         </h2>
@@ -246,7 +246,7 @@ const ModuleDetail: React.FC = () => {
 
       {/* Bloco de Conclusão do Módulo (Onde tudo acontece) */}
       {isModuleCompleted && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-6">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md space-y-6">
           <h2 className="text-2xl font-bold text-center text-green-600">
             Parabéns, você completou o módulo!
           </h2>

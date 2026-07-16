@@ -39,9 +39,29 @@ export default function CodeViewerPage() {
   const markdownCode = `\`\`\`html\n${currentFileContent}\n\`\`\``;
 
   return (
-    <div className="flex h-screen w-full bg-[#1e1e1e] text-white font-sans overflow-hidden">
-      {/* SIDEBAR */}
-      <div className="w-64 border-r border-gray-700 bg-[#252526] flex flex-col">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#1e1e1e] text-white font-sans overflow-hidden">
+      {/* MOBILE TABS (Visível apenas em telas menores que lg) */}
+      <div className="flex lg:hidden overflow-x-auto bg-[#252526] border-b border-gray-700 w-full shrink-0 scrollbar-hide">
+        {files.map((f) => (
+          <button
+            key={f.nome}
+            onClick={() => setActiveFile(f.nome)}
+            className={`px-4 py-3 text-sm flex items-center gap-2 border-b-2 transition-colors shrink-0 ${activeFile === f.nome ? "border-blue-500 bg-[#1e1e1e] text-blue-400 font-semibold" : "border-transparent text-gray-400 hover:bg-[#2a2d2e]"}`}
+          >
+            <i
+              className={
+                f.nome.endsWith(".css")
+                  ? "fab fa-css3-alt text-blue-500"
+                  : "fab fa-html5 text-orange-500"
+              }
+            ></i>
+            {f.nome}
+          </button>
+        ))}
+      </div>
+
+      {/* SIDEBAR (Desktop) */}
+      <div className="hidden lg:flex lg:w-64 border-r border-gray-700 bg-[#252526] flex-col">
         <div className="p-4 border-b border-gray-700 uppercase text-xs font-bold text-gray-400 tracking-wider">
           {moduleTitle || "Arquivos do Desafio"}
         </div>
@@ -67,7 +87,8 @@ export default function CodeViewerPage() {
 
       {/* Editor Main */}
       <div className="flex-1 flex flex-col bg-[#1e1e1e] overflow-hidden">
-        <div className="flex bg-[#2d2d2d]">
+        {/* Desktop Tab Indicator */}
+        <div className="hidden lg:flex bg-[#2d2d2d]">
           <div className="px-4 py-2 bg-[#1e1e1e] text-sm text-gray-300 border-t-2 border-blue-500 flex items-center gap-2">
             <i
               className={

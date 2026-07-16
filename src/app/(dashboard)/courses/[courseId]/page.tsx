@@ -245,7 +245,7 @@ const Dashboard: React.FC = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-3xl bg-linear-to-r from-blue-600 to-indigo-600 p-8 md:p-10 shadow-2xl"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-r from-blue-600 to-indigo-600 p-5 sm:p-8 md:p-10 shadow-2xl"
         >
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div
@@ -261,7 +261,7 @@ const Dashboard: React.FC = () => {
                   Painel do Aluno
                 </span>
               </div>
-              <h1 className="text-xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
                 Olá, {profile?.displayName?.split(" ")[0]}!
               </h1>
               <p className="text-blue-100 text-lg max-w-xl">
@@ -274,13 +274,13 @@ const Dashboard: React.FC = () => {
             {nextLesson && (
               <Link
                 href={`/courses/${course.slug}/lesson/${nextLesson.id}`}
-                className="group relative inline-flex items-center gap-3 px-6 py-4 bg-white text-blue-600 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                className="group relative inline-flex items-center gap-3 px-6 py-4 bg-white text-blue-600 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 w-full md:w-auto justify-center"
               >
                 <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full group-hover:bg-blue-600 group-hover:text-white transition-colors">
                   <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
                 </div>
-                <div className="relative flex flex-col items-start">
+                <div className="relative flex flex-col items-start text-left">
                   <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Continuar Aula
                   </span>
@@ -295,7 +295,7 @@ const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
